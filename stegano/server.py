@@ -309,3 +309,103 @@ def decrypt_endpoint():
         # Clean up temporary files
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
+
+# Update encode_frames function to add metadata
+def encode_frames(frames, encrypted_text, temp_dir):
+    """Encode encrypted text into frames"""
+    # Convert to string if it's bytes
+    if isinstance(encrypted_text, bytes):
+        encrypted_text = encrypted_text.decode('utf-8')
+        
+    # Split the text into parts
+    split_text_list = split_string(encrypted_text)
+    num_parts = len(split_text_list)
+    
+    # Use the first N frames (N = number of text parts)
+    frame_numbers = list(range(min(num_parts, len(frames))))
+    
+    print(f"Encoding text into {len(frame_numbers)} frames")
+    
+    # Hide text parts in frames
+    for i, frame_num in enumerate(frame_numbers):
+        if i >= len(split_text_list):
+            break
+            
+        frame_path = frames[frame_num]
+        # Hide text in frame using LSB steganography
+        secret_enc = lsb.hide(frame_path, split_text_list[i])
+        secret_enc.save(frame_path)
+        print(f"[INFO] Frame {frame_num} holds {split_text_list[i]}")
+    
+    # Save the frame numbers in a special metadata frame
+    # This will help with faster decryption
+    metadata_frame_path = os.path.join(temp_dir, "metadata.png")
+    # Create a simple black image for metadata
+    metadata_img = cv2.imread(frames[0])
+    cv2.imwrite(metadata_frame_path, metadata_img)
+    
+    # Save frame numbers as metadata
+    metadata_content = ",".join(map(str, frame_numbers))
+    metadata_secret = lsb.hide(metadata_frame_path, metadata_content)
+    metadata_secret.save(metadata_frame_path)
+    print(f"[INFO] Metadata frame holds frame numbers: {metadata_content}")
+    
+    # Insert the metadata frame as the last frame to process
+    frames.append(metadata_frame_path)
+        
+    return frame_numbers
+
+# Update decode_video to look for metadata frame
+def decode_video(video_path, temp_dir):
+    """Decode hidden text from video"""
+    # Create a temporary directory
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+    
+    # Extract frames using OpenCV directly
+    cap = cv2.VideoCapture(video_path)
+    number_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    print(f"[INFO] Video has {number_of_frames} frames")
+    
+    # First check if there's a metadata frame by looking at the last frames
+    metadata_frame_numbers = []
+    
+    # Check the last 5 frames for metadata
+    print("[INFO] Looking for metadata frame...")
+    for frame_index in range(max(0, number_of_frames - 5), number_of_frames):
+        # Jump to frame
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+        ret, frame = cap.read()
+        if not ret:
+            continue
+            
+        # Save frame and try to decode it
+        metadata_frame_path = os.path.join(temp_dir, f"metadata_check_{frame_index}.png")
+        cv2.imwrite(metadata_frame_path, frame)
+        
+        try:
+            metadata_content = lsb.reveal(metadata_frame_path)
+            if metadata_content and ',' in metadata_content:
+                # This looks like our metadata frame
+                print(f"[INFO] Found potential metadata at frame {frame_index}: {metadata_content}")
+                try:
+                    # Try to parse the frame numbers
+                    frame_nums = [int(num) for num in metadata_content.split(',')]
+                    metadata_frame_numbers = frame_nums
+                    print(f"[INFO] Using frame numbers from metadata: {frame_nums}")
+                    break
+                except:
+                    print(f"[INFO] Failed to parse metadata numbers: {metadata_content}")
+        except Exception as e:
+            pass
+    
+    # Reset the video capture
+    cap.release()
+    cap = cv2.VideoCapture(video_path)
+    
+    # Frames to check - either from metadata or first 15 frames if no metadata
+    frames_to_check = metadata_frame_numbers if metadata_frame_numbers else list(range(15))
+    print(f"[INFO] Will check these frames: {frames_to_check}")
+    
+    # Rest of decode_video function remains the same...
