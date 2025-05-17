@@ -67,9 +67,143 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
+class _SwipeTabWrapper extends StatefulWidget {
+  final int selectedIndex;
+  final List<Widget> screens;
+  final void Function(dynamic videoFile) onVideoRecorded;
+  final VoidCallback? onNextTab;
+  const _SwipeTabWrapper({Key? key, required this.selectedIndex, required this.screens, required this.onVideoRecorded, this.onNextTab}) : super(key: key);
+
+  @override
+  State<_SwipeTabWrapper> createState() => _SwipeTabWrapperState();
+}
+
+class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerProviderStateMixin {
+  double _dragOffset = 0;
+  bool _isDragging = false;
+  late AnimationController _animController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _animation = Tween<double>(begin: 0, end: 0).animate(_animController);
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragOffset += details.delta.dx;
+      _dragOffset = _dragOffset.clamp(-MediaQuery.of(context).size.width, MediaQuery.of(context).size.width);
+      _isDragging = true;
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    double width = MediaQuery.of(context).size.width;
+    if (_dragOffset > width * 0.3) {
+      // Right swipe: Snap open camera
+      _animController.reset();
+      _animation = Tween<double>(begin: _dragOffset, end: width).animate(_animController)
+        ..addListener(() {
+          setState(() {
+            _dragOffset = _animation.value;
+          });
+        })
+        ..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => CameraScreen(onVideoRecorded: widget.onVideoRecorded),
+                fullscreenDialog: true,
+              ),
+            ).then((result) {
+              setState(() {
+                _dragOffset = 0;
+                _isDragging = false;
+              });
+              if (result == 'nextTab' && widget.onNextTab != null) {
+                widget.onNextTab!();
+              }
+            });
+          }
+        });
+      _animController.forward();
+    } else if (_dragOffset < -width * 0.3) {
+      // Left swipe: Snap to next tab
+      if (widget.onNextTab != null) {
+        widget.onNextTab!();
+      }
+      setState(() {
+        _dragOffset = 0;
+        _isDragging = false;
+      });
+    } else {
+      // Snap back to tab
+      _animController.reset();
+      _animation = Tween<double>(begin: _dragOffset, end: 0).animate(_animController)
+        ..addListener(() {
+          setState(() {
+            _dragOffset = _animation.value;
+          });
+        })
+        ..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            setState(() {
+              _dragOffset = 0;
+              _isDragging = false;
+            });
+          }
+        });
+      _animController.forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    return Stack(
+      children: [
+        // Camera preview sliding in from the left (only show if swiping right)
+        if (_dragOffset > 0 || _isDragging)
+          Positioned(
+            left: -width + _dragOffset,
+            top: 0,
+            bottom: 0,
+            width: width,
+            child: IgnorePointer(
+              ignoring: !_isDragging,
+              child: CameraScreen(
+                onVideoRecorded: widget.onVideoRecorded,
+              ),
+            ),
+          ),
+        // Current Tab Screen
+        Positioned(
+          left: _dragOffset,
+          top: 0,
+          bottom: 0,
+          width: width,
+          child: GestureDetector(
+            onHorizontalDragUpdate: _onDragUpdate,
+            onHorizontalDragEnd: _onDragEnd,
+            child: widget.screens[widget.selectedIndex],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
-  
+
   final List<Widget> _screens = [
     const FeedScreen(),
     const CreatePostScreen(),
@@ -80,7 +214,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: _SwipeTabWrapper(
+        selectedIndex: _selectedIndex,
+        screens: _screens,
+        onVideoRecorded: (videoFile) {
+          debugPrint('Video recorded: \\${videoFile.path}');
+        },
+        onNextTab: () {
+          setState(() {
+            _selectedIndex = (_selectedIndex + 1) % _screens.length;
+          });
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
