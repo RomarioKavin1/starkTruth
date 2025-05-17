@@ -43,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               TextSpan(
                 text: 'PRO',
                 style: TextStyle(
-                  color: Color(0xFF4CAF50),
+                  color: Color(0xFF004AAD),
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
@@ -124,20 +124,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ),
             child: TabBar(
               controller: _tabController,
+              indicatorColor: Color(0xFF004AAD),
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               indicator: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: Color(0xFF004AAD),
                 borderRadius: BorderRadius.circular(8),
               ),
-              tabs: const [
+              tabs: [
                 Tab(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.grid_on),
                       SizedBox(width: 8),
-                      Text('Videos'),
+                      Text('Videos', style: TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),
@@ -147,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     children: [
                       Icon(Icons.bookmark),
                       SizedBox(width: 8),
-                      Text('Saved'),
+                      Text('Saved', style: TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),
@@ -171,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   itemCount: 0, // Empty state
                   itemBuilder: (context, index) {
                     return Container(
-                      color: Colors.grey[900],
+                      color: Color(0xFF003377),
                       child: const Center(
                         child: Icon(Icons.play_circle_outline),
                       ),
@@ -189,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   itemCount: 0, // Empty state
                   itemBuilder: (context, index) {
                     return Container(
-                      color: Colors.grey[900],
+                      color: Color(0xFF003377),
                       child: const Center(
                         child: Icon(Icons.bookmark),
                       ),

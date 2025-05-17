@@ -7,7 +7,7 @@ class ThemedLoader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.6),
+      color: Color(0xFF003377),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

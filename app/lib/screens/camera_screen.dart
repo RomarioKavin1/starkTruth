@@ -22,7 +22,7 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget _buildTranslucentCircle({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
+        color: Color(0xFF004AAD),
         shape: BoxShape.circle,
       ),
       child: child,
@@ -106,8 +106,8 @@ class _CameraScreenState extends State<CameraScreen> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: Colors.black,
-            title: const Text('Camera Error', style: TextStyle(color: Colors.red)),
+            backgroundColor: Color(0xFF004AAD),
+            title: const Text('Camera Error', style: TextStyle(color: Colors.white)),
             content: Text('Failed to record video: $e', style: const TextStyle(color: Colors.white)),
             actions: [
               TextButton(
@@ -128,7 +128,7 @@ class _CameraScreenState extends State<CameraScreen> {
       barrierDismissible: false,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.black,
+          backgroundColor: Color(0xFF004AAD),
           title: const Text('Encrypt & Upload', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -203,7 +203,7 @@ class _CameraScreenState extends State<CameraScreen> {
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
-              backgroundColor: Colors.black,
+              backgroundColor: Color(0xFF004AAD),
               title: const Text('Saved!', style: TextStyle(color: Color(0xFF4CAF50))),
               content: Text('Video saved to:\n$savePath', style: const TextStyle(color: Colors.white)),
               actions: [
@@ -220,7 +220,7 @@ class _CameraScreenState extends State<CameraScreen> {
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
-              backgroundColor: Colors.black,
+              backgroundColor: Color(0xFF004AAD),
               title: const Text('Error', style: TextStyle(color: Colors.red)),
               content: Text('Video processed but failed to save: $e', style: const TextStyle(color: Colors.white)),
               actions: [
@@ -238,7 +238,7 @@ class _CameraScreenState extends State<CameraScreen> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: Colors.black,
+            backgroundColor: Color(0xFF004AAD),
             title: const Text('Error', style: TextStyle(color: Colors.red)),
             content: const Text('No video data received from server.', style: TextStyle(color: Colors.white)),
             actions: [
@@ -256,7 +256,7 @@ class _CameraScreenState extends State<CameraScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.black,
+          backgroundColor: Color(0xFF004AAD),
           title: const Text('Error', style: TextStyle(color: Colors.red)),
           content: Text('Failed to upload: $e', style: const TextStyle(color: Colors.white)),
           actions: [
@@ -280,7 +280,7 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFF004AAD),
       body: Stack(
         fit: StackFit.expand,
         children: [

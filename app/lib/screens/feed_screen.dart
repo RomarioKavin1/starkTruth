@@ -49,13 +49,14 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.black,
         title: RichText(
           text: const TextSpan(
             children: [
               TextSpan(
                 text: 'Truth',
                 style: TextStyle(
-                  color: Color(0xFF4CAF50),
+                  color: Color(0xFF004AAD),
                   fontWeight: FontWeight.bold,
                   fontSize: 24,
                 ),

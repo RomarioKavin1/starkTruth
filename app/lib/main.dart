@@ -30,16 +30,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF004AAD),
+        scaffoldBackgroundColor: Colors.black,
         primaryColor: const Color(0xFF004AAD),
         colorScheme: ColorScheme.dark(
           primary: const Color(0xFF004AAD),
           secondary: const Color(0xFF004AAD),
-          background: const Color(0xFF004AAD),
-          surface: const Color(0xFF003377),
+          background: Colors.black,
+          surface: const Color(0xFF121212),
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF004AAD),
+          backgroundColor: Colors.black,
           elevation: 0,
         ),
         textTheme: const TextTheme(
@@ -238,8 +238,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.black,
-        selectedItemColor: const Color(0xFF4CAF50),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Color(0xFF004AAD),
+        unselectedItemColor: Colors.white70,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

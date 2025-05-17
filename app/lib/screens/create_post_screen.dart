@@ -33,7 +33,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: const Text(
               'POST',
               style: TextStyle(
-                color: Color(0xFF4CAF50),
+                color: Color(0xFF004AAD),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -99,13 +99,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.photo_library, color: Color(0xFF4CAF50)),
+                  icon: const Icon(Icons.photo_library, color: Color(0xFF004AAD)),
                   onPressed: () {
                     // Open gallery
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.camera_alt, color: Color(0xFF4CAF50)),
+                  icon: const Icon(Icons.camera_alt, color: Color(0xFF004AAD)),
                   onPressed: () {
                     Navigator.pushNamed(context, '/camera');
                   },

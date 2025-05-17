@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.account_balance_wallet, size: 80, color: Colors.greenAccent.shade400),
+              Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF004AAD)),
               const SizedBox(height: 24),
               Text(
                 'Connect Wallet',
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
               if (_connected && _walletAddress != null)
                 Column(
                   children: [
-                    Text('Connected!', style: TextStyle(color: Colors.greenAccent.shade400, fontSize: 18)),
+                    Text('Connected!', style: TextStyle(color: Colors.white, fontSize: 18)),
                     const SizedBox(height: 8),
                     Text(_walletAddress!, style: const TextStyle(color: Colors.white70)),
                   ],
@@ -68,18 +68,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+                    child: Text(_error!, style: const TextStyle(color: Colors.white)),
                   ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent.shade400,
-                    foregroundColor: Colors.black,
+                    backgroundColor: Color(0xFF004AAD),
+                    foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
                   ),
                   icon: _connecting
                       ? const SizedBox(
                           width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.link),
                   label: Text(_connecting ? 'Connecting...' : 'Connect Wallet'),

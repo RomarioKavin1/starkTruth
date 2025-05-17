@@ -80,7 +80,7 @@ class _MessagingScreenState extends State<MessagingScreen> {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey,
+              backgroundColor: Color(0xFF003377),
               child: Text(
                 'T',
                 style: TextStyle(
@@ -152,15 +152,15 @@ class _MessagingScreenState extends State<MessagingScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: Color(0xFF004AAD),
               border: Border(
-                top: BorderSide(color: Colors.grey[800]!, width: 0.5),
+                top: BorderSide(color: Color(0xFF003377), width: 0.5),
               ),
             ),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.attach_file, color: Colors.grey),
+                  icon: const Icon(Icons.attach_file, color: Colors.white70),
                   onPressed: () {},
                 ),
                 Expanded(
@@ -169,7 +169,7 @@ class _MessagingScreenState extends State<MessagingScreen> {
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
                       filled: true,
-                      fillColor: Colors.grey[900],
+                      fillColor: Color(0xFF003377),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,

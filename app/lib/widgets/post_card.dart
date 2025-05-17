@@ -29,7 +29,7 @@ class PostCard extends StatelessWidget {
                         post.mediaPath!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.grey[900],
+                          color: Colors.black,
                           child: const Center(
                             child: Icon(Icons.broken_image, color: Colors.white, size: 48),
                           ),
