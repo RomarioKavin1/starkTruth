@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/feed_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/create_post_screen.dart';
 import 'screens/decrypt_screen.dart';
 import 'screens/profile_screen.dart';
@@ -29,16 +30,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        primaryColor: const Color(0xFF4CAF50),
+        scaffoldBackgroundColor: const Color(0xFF004AAD),
+        primaryColor: const Color(0xFF004AAD),
         colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF4CAF50),
-          secondary: const Color(0xFF4CAF50),
-          background: Colors.black,
-          surface: const Color(0xFF121212),
+          primary: const Color(0xFF004AAD),
+          secondary: const Color(0xFF004AAD),
+          background: const Color(0xFF004AAD),
+          surface: const Color(0xFF003377),
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
+          backgroundColor: Color(0xFF004AAD),
           elevation: 0,
         ),
         textTheme: const TextTheme(
@@ -51,8 +52,10 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MainNavigationScreen(),
+      home: const LoginScreen(),
       routes: {
+        '/main': (context) => const MainNavigationScreen(),
+        '/feed': (context) => const FeedScreen(),
         '/camera': (context) => const CameraScreen(),
         '/messaging': (context) => const MessagingScreen(),
       },
