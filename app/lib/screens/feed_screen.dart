@@ -17,13 +17,8 @@ class _FeedScreenState extends State<FeedScreen> {
       content: 'The truth about our society that no one wants to talk about.',
       likes: 1243,
       comments: 89,
-    ),
-    Post(
-      username: 'deepdiver',
-      avatarText: 'D',
-      content: 'What I discovered after years of research.',
-      likes: 856,
-      comments: 42,
+      type: PostType.photo,
+      mediaPath: 'https://via.placeholder.com/600x400?text=Truth+Photo',
     ),
     Post(
       username: 'realitycheck',
@@ -31,6 +26,22 @@ class _FeedScreenState extends State<FeedScreen> {
       content: 'This is what they don\'t want you to know about current events.',
       likes: 2134,
       comments: 156,
+      type: PostType.photo,
+      mediaPath: 'https://via.placeholder.com/600x400?text=Current+Events',
+    ),
+    Post(
+      username: 'textonly',
+      avatarText: 'X',
+      content: 'This is a text-only post. No media here!',
+      likes: 10,
+      comments: 2,
+    ),
+    Post(
+      username: 'anothertext',
+      avatarText: 'A',
+      content: 'Just another text post to show variety in the feed.',
+      likes: 5,
+      comments: 1,
     ),
   ];
 

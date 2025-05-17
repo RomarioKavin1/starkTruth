@@ -1,10 +1,13 @@
+enum PostType { text, photo, video }
+
 class Post {
   final String username;
   final String avatarText;
   final String content;
   final int likes;
   final int comments;
-  final String? imageUrl;
+  final PostType? type;
+  final String? mediaPath; // local or remote file path
 
   Post({
     required this.username,
@@ -12,6 +15,7 @@ class Post {
     required this.content,
     required this.likes,
     required this.comments,
-    this.imageUrl,
+    this.type,
+    this.mediaPath,
   });
 }
