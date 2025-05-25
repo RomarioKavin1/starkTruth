@@ -8,6 +8,8 @@ import 'dart:async';
 import 'package:path_provider/path_provider.dart';
 import '../services/steno_service.dart';
 import '../widgets/loader.dart';
+import '../services/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CameraScreen extends StatefulWidget {
   final void Function(File videoFile)? onVideoRecorded;
@@ -174,47 +176,34 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _uploadVideoWithText(File videoFile, String text) async {
     setState(() => _isUploading = true);
     try {
-      // TODO: Replace with your API URL
-        const apiUrl = 'http://10.0.2.2:5000/encrypt';      
-        final result = await sendVideoForEncryption(
+      // Encrypt video via API
+      const apiUrl = 'http://10.0.2.2:5000/encrypt';
+      final result = await sendVideoForEncryption(
         videoFile: videoFile,
         text: text,
         apiUrl: apiUrl,
       );
       // Save the received video to storage
       if (result['mp4'] != null && result['mp4_filename'] != null) {
-        try {
-          final mp4Bytes = base64Decode(result['mp4']);
-          final filename = result['mp4_filename'] as String;
-          // Use path_provider to get the Downloads directory (Android only)
-          String? savePath;
-          if (Theme.of(context).platform == TargetPlatform.android) {
-            final downloadsDir = await getExternalStorageDirectory();
-            if (downloadsDir != null) {
-              savePath = '${downloadsDir.path}/$filename';
-            }
+        final mp4Bytes = base64Decode(result['mp4']);
+        final filename = result['mp4_filename'] as String;
+        // Save encrypted file locally (optional)
+        String? savePath;
+        if (Theme.of(context).platform == TargetPlatform.android) {
+          final downloadsDir = await getExternalStorageDirectory();
+          if (downloadsDir != null) {
+            savePath = '${downloadsDir.path}/$filename';
           }
-          // Fallback to documents dir
-          savePath ??= (await getApplicationDocumentsDirectory()).path + '/$filename';
-          final file = File(savePath);
-          await file.writeAsBytes(mp4Bytes);
-          setState(() => _isUploading = false);
-          if (!mounted) return;
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              backgroundColor: Color(0xFF004AAD),
-              title: const Text('Saved!', style: TextStyle(color: Color(0xFF4CAF50))),
-              content: Text('Video saved to:\n$savePath', style: const TextStyle(color: Colors.white)),
-              actions: [
-                TextButton(
-                  child: const Text('OK', style: TextStyle(color: Colors.white)),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                ),
-              ],
-            ),
-          );
-        } catch (e) {
+        }
+        savePath ??= (await getApplicationDocumentsDirectory()).path + '/$filename';
+        final encryptedFile = File(savePath);
+        await encryptedFile.writeAsBytes(mp4Bytes);
+
+        // --- Upload to Supabase and create post ---
+        final supabaseService = SupabaseService();
+        final prefs = await SharedPreferences.getInstance();
+        final walletAddress = prefs.getString('wallet_address') ?? '';
+        if (walletAddress.isEmpty) {
           setState(() => _isUploading = false);
           if (!mounted) return;
           showDialog(
@@ -222,7 +211,7 @@ class _CameraScreenState extends State<CameraScreen> {
             builder: (ctx) => AlertDialog(
               backgroundColor: Color(0xFF004AAD),
               title: const Text('Error', style: TextStyle(color: Colors.red)),
-              content: Text('Video processed but failed to save: $e', style: const TextStyle(color: Colors.white)),
+              content: const Text('No wallet address found. Please log in again.', style: TextStyle(color: Colors.white)),
               actions: [
                 TextButton(
                   child: const Text('OK', style: TextStyle(color: Colors.white)),
@@ -231,7 +220,40 @@ class _CameraScreenState extends State<CameraScreen> {
               ],
             ),
           );
+          return;
         }
+        // Ensure profile exists
+        final profile = await supabaseService.getUserProfile(walletAddress);
+        if (profile == null) {
+          await supabaseService.createUserProfile(walletAddress);
+        }
+        final videoUrl = await supabaseService.uploadVideo(
+          encryptedFile.path,
+          '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
+        );
+        await supabaseService.createPost(
+          walletAddress: walletAddress,
+          videoUrl: videoUrl,
+          encryptedContent: text,
+        );
+        // --- End upload/post creation ---
+
+        setState(() => _isUploading = false);
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Color(0xFF004AAD),
+            title: const Text('Success!', style: TextStyle(color: Color(0xFF4CAF50))),
+            content: Text('Your encrypted video has been uploaded and posted!', style: const TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                child: const Text('OK', style: TextStyle(color: Colors.white)),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ],
+          ),
+        );
       } else {
         setState(() => _isUploading = false);
         if (!mounted) return;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_service.dart';
+import 'dart:io';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -9,6 +11,72 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _postController = TextEditingController();
+  final _supabaseService = SupabaseService();
+  File? _videoFile;
+  bool _isUploading = false;
+  String? _error;
+
+  Future<void> _handleVideoRecorded(File videoFile) async {
+    setState(() {
+      _videoFile = videoFile;
+    });
+  }
+
+  Future<void> _createPost() async {
+    if (_videoFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please record a video first')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+      _error = null;
+    });
+
+    try {
+      print('Encrypting video...');
+      final encryptedFile = await _supabaseService.encryptVideo(_videoFile!, _postController.text);
+      print('Encrypted file at: \\${encryptedFile.path}');
+
+      print('Uploading to Supabase...');
+      final videoUrl = await _supabaseService.uploadVideo(
+        encryptedFile.path,
+        '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
+      );
+      print('Uploaded video URL: \\${videoUrl}');
+
+      print('Creating post in Supabase...');
+      await _supabaseService.createPost(
+        walletAddress: 'current_user_wallet', // TODO: Get from auth state
+        videoUrl: videoUrl,
+        encryptedContent: _postController.text,
+      );
+      print('Post created!');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post created successfully!')),
+        );
+        _postController.clear();
+        setState(() {
+          _videoFile = null;
+        });
+      }
+    } catch (e) {
+      print('Error in createPost: \\${e.toString()}');
+      setState(() {
+        _error = 'Failed to create post. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -23,20 +91,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         title: const Text('Create Post'),
         actions: [
           TextButton(
-            onPressed: () {
-              // Post creation logic would go here
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Post created successfully!')),
-              );
-              _postController.clear();
-            },
-            child: const Text(
-              'POST',
-              style: TextStyle(
-                color: Color(0xFF004AAD),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            onPressed: _isUploading ? null : _createPost,
+            child: _isUploading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF004AAD),
+                    ),
+                  )
+                : const Text(
+                    'POST',
+                    style: TextStyle(
+                      color: Color(0xFF004AAD),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -74,17 +145,64 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                controller: _postController,
-                maxLines: null,
-                decoration: const InputDecoration(
-                  hintText: 'Share your deep truth...',
-                  border: InputBorder.none,
-                ),
-                style: const TextStyle(fontSize: 18),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _postController,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      hintText: 'Share your deep truth...',
+                      border: InputBorder.none,
+                    ),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  if (_videoFile != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Icon(
+                              Icons.videocam,
+                              size: 48,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  _videoFile = null;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
+          
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ),
           
           // Media options
           Container(
@@ -99,16 +217,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.photo_library, color: Color(0xFF004AAD)),
-                  onPressed: () {
-                    // Open gallery
-                  },
-                ),
-                IconButton(
                   icon: const Icon(Icons.camera_alt, color: Color(0xFF004AAD)),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/camera');
-                  },
+                  onPressed: _isUploading
+                      ? null
+                      : () {
+                          Navigator.pushNamed(
+                            context,
+                            '/camera',
+                            arguments: _handleVideoRecorded,
+                          );
+                        },
                 ),
               ],
             ),

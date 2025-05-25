@@ -1,2 +1,4 @@
 
 app/pubspec.lock
+/.venv
+/app/linux

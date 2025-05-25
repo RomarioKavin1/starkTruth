@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/feed_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/create_post_screen.dart';
@@ -7,9 +8,15 @@ import 'screens/decrypt_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/messaging_screen.dart';
+import 'services/supabase_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Supabase
+  await dotenv.load();
+  await SupabaseService().initialize();
+  
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -8,34 +10,53 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _connecting = false;
-  bool _connected = false;
-  String? _walletAddress;
+  final _formKey = GlobalKey<FormState>();
+  final _walletController = TextEditingController();
+  bool _isLoading = false;
   String? _error;
+  final _supabaseService = SupabaseService();
 
-  // Mock connect function
-  Future<void> _connectWallet() async {
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() {
-      _connecting = true;
+      _isLoading = true;
       _error = null;
     });
-    await Future.delayed(const Duration(seconds: 2));
-    // Randomly succeed/fail for mock
-    if (DateTime.now().second % 2 == 0) {
-      setState(() {
-        _connected = true;
-        _walletAddress = '0xFAKE1234...ABCD';
-        _connecting = false;
-      });
-      Future.delayed(const Duration(milliseconds: 500), () {
+
+    try {
+      final walletAddress = _walletController.text.trim();
+      final profile = await _supabaseService.getUserProfile(walletAddress);
+      
+      if (profile == null) {
+        // Create new profile if user doesn't exist
+        await _supabaseService.createUserProfile(walletAddress);
+      }
+
+      // Store wallet address in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('wallet_address', walletAddress);
+
+      if (mounted) {
         Navigator.of(context).pushReplacementNamed('/main');
-      });
-    } else {
+      }
+    } catch (e) {
       setState(() {
-        _error = 'Failed to connect. Try again!';
-        _connecting = false;
+        _error = 'Failed to login. Please try again.';
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _walletController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,50 +64,82 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF004AAD)),
-              const SizedBox(height: 24),
-              Text(
-                'Connect Wallet',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              if (_connected && _walletAddress != null)
-                Column(
-                  children: [
-                    Text('Connected!', style: TextStyle(color: Colors.white, fontSize: 18)),
-                    const SizedBox(height: 8),
-                    Text(_walletAddress!, style: const TextStyle(color: Colors.white70)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF004AAD)),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Enter Wallet Address',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _walletController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your wallet address',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(Icons.account_balance_wallet, color: Color(0xFF004AAD)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your wallet address';
+                      }
+                      if (!value.startsWith('0x') || value.length < 42) {
+                        return 'Please enter a valid wallet address';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
-                )
-              else ...[
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!, style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF004AAD),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _login,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Login'),
+                    ),
                   ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF004AAD),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  icon: _connecting
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.link),
-                  label: Text(_connecting ? 'Connecting...' : 'Connect Wallet'),
-                  onPressed: _connecting ? null : _connectWallet,
-                ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
