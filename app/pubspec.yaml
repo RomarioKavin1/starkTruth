@@ -44,9 +44,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.4.0
   video_player: ^2.9.5
-  supabase_flutter: ^2.9.0
   flutter_riverpod: ^2.6.1
-  flutter_dotenv: ^5.2.1
   path: ^1.8.3
   file_picker: ^10.0.0
 
@@ -103,6 +101,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-  assets:
-    - .env
