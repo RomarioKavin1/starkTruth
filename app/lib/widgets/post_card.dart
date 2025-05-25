@@ -7,10 +7,16 @@ import 'package:video_player/video_player.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
+  final VoidCallback? onLike;
+  final VoidCallback? onComment;
+  final bool isLiked;
 
   const PostCard({
     super.key,
     required this.post,
+    this.onLike,
+    this.onComment,
+    this.isLiked = false,
   });
 
   @override
@@ -122,8 +128,10 @@ class PostCard extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.favorite_border),
-                    onPressed: () {},
+                    icon: isLiked
+                        ? const Icon(Icons.favorite, color: Colors.red)
+                        : const Icon(Icons.favorite_border),
+                    onPressed: onLike,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -138,7 +146,7 @@ class PostCard extends StatelessWidget {
                   const SizedBox(width: 16),
                   IconButton(
                     icon: const Icon(Icons.chat_bubble_outline),
-                    onPressed: () {},
+                    onPressed: onComment,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -175,9 +183,13 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = widget.videoPath.startsWith('assets/')
-        ? VideoPlayerController.asset(widget.videoPath)
-        : VideoPlayerController.file(File(widget.videoPath));
+    if (widget.videoPath.startsWith('http')) {
+      _controller = VideoPlayerController.network(widget.videoPath);
+    } else if (widget.videoPath.startsWith('assets/')) {
+      _controller = VideoPlayerController.asset(widget.videoPath);
+    } else {
+      _controller = VideoPlayerController.file(File(widget.videoPath));
+    }
     _controller.initialize().then((_) {
       setState(() {
         _initialized = true;
