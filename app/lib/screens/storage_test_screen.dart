@@ -12,7 +12,7 @@ class StorageTestScreen extends ConsumerStatefulWidget {
 }
 
 class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
-  final _bucketName = 'uploads';
+  final _bucketName = 'encrypted-video-bucket';
   String? _uploadedFileUrl;
   String? _error;
   bool _isUploading = false;
@@ -26,10 +26,9 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
 
   Future<void> _loadFiles() async {
     try {
-      final files = await Supabase.instance.client.storage
-          .from(_bucketName)
-          .list();
-      
+      final files =
+          await Supabase.instance.client.storage.from(_bucketName).list();
+
       setState(() {
         _files = files;
         _error = null;
@@ -55,8 +54,9 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
         });
 
         final file = File(result.files.single.path!);
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
-        
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
+
         // Upload file
         await Supabase.instance.client.storage
             .from(_bucketName)
@@ -92,13 +92,13 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
 
   Future<void> _deleteFile(String filePath) async {
     try {
-      await Supabase.instance.client.storage
-          .from(_bucketName)
-          .remove([filePath]);
-      
+      await Supabase.instance.client.storage.from(_bucketName).remove([
+        filePath,
+      ]);
+
       // Refresh file list
       await _loadFiles();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('File deleted successfully')),
@@ -106,9 +106,9 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete file: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete file: $e')));
       }
     }
   }
@@ -118,7 +118,7 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
       final bytes = await Supabase.instance.client.storage
           .from(_bucketName)
           .download(filePath);
-      
+
       // Get the download directory
       final directory = Directory('/tmp/supabase_downloads');
       if (!await directory.exists()) {
@@ -136,9 +136,9 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download file: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to download file: $e')));
       }
     }
   }
@@ -149,10 +149,7 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
       appBar: AppBar(
         title: const Text('Supabase Storage Test'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadFiles,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadFiles),
         ],
       ),
       body: Padding(
@@ -162,22 +159,20 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
           children: [
             ElevatedButton.icon(
               onPressed: _isUploading ? null : _pickAndUploadFile,
-              icon: _isUploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.upload_file),
+              icon:
+                  _isUploading
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.upload_file),
               label: Text(_isUploading ? 'Uploading...' : 'Upload File'),
             ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
               ),
             if (_uploadedFileUrl != null)
               Padding(
@@ -228,4 +223,4 @@ class _StorageTestScreenState extends ConsumerState<StorageTestScreen> {
       ),
     );
   }
-} 
+}

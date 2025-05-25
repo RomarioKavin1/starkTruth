@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
@@ -9,9 +8,9 @@ class StorageService {
 
   StorageService({
     required SupabaseClient supabase,
-    String bucketName = 'uploads',
-  })  : _supabase = supabase,
-        _bucketName = bucketName;
+    String bucketName = 'encrypted-video-bucket',
+  }) : _supabase = supabase,
+       _bucketName = bucketName;
 
   /// Upload a file to Supabase Storage
   /// Returns the public URL of the uploaded file
@@ -25,16 +24,14 @@ class StorageService {
       final fileExt = path.extension(fileName);
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final uniqueFileName = '${timestamp}_$fileName';
-      
+
       // Construct the storage path
-      final storagePath = customPath != null 
-          ? '$customPath/$uniqueFileName'
-          : uniqueFileName;
+      final storagePath =
+          customPath != null ? '$customPath/$uniqueFileName' : uniqueFileName;
 
       // Upload the file
-      final response = await _supabase
-          .storage
-          .from(_bucketName)
+      final response = await _supabase.storage
+          .from("encrypted-video-bucket")
           .upload(
             storagePath,
             file,
@@ -46,13 +43,13 @@ class StorageService {
           );
 
       // Get the public URL
-      final publicUrl = _supabase
-          .storage
-          .from(_bucketName)
+      final publicUrl = _supabase.storage
+          .from("videos")
           .getPublicUrl(storagePath);
 
       return publicUrl;
     } catch (e) {
+      print(e);
       throw Exception('Failed to upload file: $e');
     }
   }
@@ -60,10 +57,7 @@ class StorageService {
   /// Delete a file from Supabase Storage
   Future<void> deleteFile(String filePath) async {
     try {
-      await _supabase
-          .storage
-          .from(_bucketName)
-          .remove([filePath]);
+      await _supabase.storage.from(_bucketName).remove([filePath]);
     } catch (e) {
       throw Exception('Failed to delete file: $e');
     }
@@ -72,11 +66,10 @@ class StorageService {
   /// Get a signed URL for a file (temporary access)
   Future<String> getSignedUrl(String filePath, {int expiresIn = 3600}) async {
     try {
-      final response = await _supabase
-          .storage
+      final response = await _supabase.storage
           .from(_bucketName)
           .createSignedUrl(filePath, expiresIn);
-      
+
       return response;
     } catch (e) {
       throw Exception('Failed to get signed URL: $e');
@@ -86,14 +79,13 @@ class StorageService {
   /// List files in a directory
   Future<List<FileObject>> listFiles({String? directory}) async {
     try {
-      final response = await _supabase
-          .storage
+      final response = await _supabase.storage
           .from(_bucketName)
           .list(path: directory);
-      
+
       return response;
     } catch (e) {
       throw Exception('Failed to list files: $e');
     }
   }
-} 
+}
