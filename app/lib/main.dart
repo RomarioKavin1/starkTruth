@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const StorageTestScreen(),
+      home: const LoginScreen(),
       routes: {
         '/main': (context) => const MainNavigationScreen(),
         '/feed': (context) => const FeedScreen(),
