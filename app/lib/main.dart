@@ -9,6 +9,11 @@ import 'screens/profile_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/messaging_screen.dart';
 import 'services/supabase_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/storage_test_screen.dart';
+import 'screens/sandbox_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +29,12 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const MyApp());
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_PROJECT_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -50,10 +60,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
         textTheme: const TextTheme(
-          titleLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+          titleLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
           bodyLarge: TextStyle(fontSize: 16),
           bodyMedium: TextStyle(fontSize: 14),
         ),
@@ -65,6 +72,7 @@ class MyApp extends StatelessWidget {
         '/feed': (context) => const FeedScreen(),
         '/camera': (context) => const CameraScreen(),
         '/messaging': (context) => const MessagingScreen(),
+        '/sandbox': (context) => const SandboxScreen(),
       },
     );
   }
@@ -82,13 +90,20 @@ class _SwipeTabWrapper extends StatefulWidget {
   final List<Widget> screens;
   final void Function(dynamic videoFile) onVideoRecorded;
   final VoidCallback? onNextTab;
-  const _SwipeTabWrapper({Key? key, required this.selectedIndex, required this.screens, required this.onVideoRecorded, this.onNextTab}) : super(key: key);
+  const _SwipeTabWrapper({
+    Key? key,
+    required this.selectedIndex,
+    required this.screens,
+    required this.onVideoRecorded,
+    this.onNextTab,
+  }) : super(key: key);
 
   @override
   State<_SwipeTabWrapper> createState() => _SwipeTabWrapperState();
 }
 
-class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerProviderStateMixin {
+class _SwipeTabWrapperState extends State<_SwipeTabWrapper>
+    with SingleTickerProviderStateMixin {
   double _dragOffset = 0;
   bool _isDragging = false;
   late AnimationController _animController;
@@ -97,7 +112,10 @@ class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _animation = Tween<double>(begin: 0, end: 0).animate(_animController);
   }
 
@@ -110,7 +128,10 @@ class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerPro
   void _onDragUpdate(DragUpdateDetails details) {
     setState(() {
       _dragOffset += details.delta.dx;
-      _dragOffset = _dragOffset.clamp(-MediaQuery.of(context).size.width, MediaQuery.of(context).size.width);
+      _dragOffset = _dragOffset.clamp(
+        -MediaQuery.of(context).size.width,
+        MediaQuery.of(context).size.width,
+      );
       _isDragging = true;
     });
   }
@@ -120,30 +141,36 @@ class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerPro
     if (_dragOffset > width * 0.3) {
       // Right swipe: Snap open camera
       _animController.reset();
-      _animation = Tween<double>(begin: _dragOffset, end: width).animate(_animController)
-        ..addListener(() {
-          setState(() {
-            _dragOffset = _animation.value;
-          });
-        })
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => CameraScreen(onVideoRecorded: widget.onVideoRecorded),
-                fullscreenDialog: true,
-              ),
-            ).then((result) {
+      _animation =
+          Tween<double>(begin: _dragOffset, end: width).animate(_animController)
+            ..addListener(() {
               setState(() {
-                _dragOffset = 0;
-                _isDragging = false;
+                _dragOffset = _animation.value;
               });
-              if (result == 'nextTab' && widget.onNextTab != null) {
-                widget.onNextTab!();
+            })
+            ..addStatusListener((status) {
+              if (status == AnimationStatus.completed) {
+                Navigator.of(context)
+                    .push(
+                      MaterialPageRoute(
+                        builder:
+                            (context) => CameraScreen(
+                              onVideoRecorded: widget.onVideoRecorded,
+                            ),
+                        fullscreenDialog: true,
+                      ),
+                    )
+                    .then((result) {
+                      setState(() {
+                        _dragOffset = 0;
+                        _isDragging = false;
+                      });
+                      if (result == 'nextTab' && widget.onNextTab != null) {
+                        widget.onNextTab!();
+                      }
+                    });
               }
             });
-          }
-        });
       _animController.forward();
     } else if (_dragOffset < -width * 0.3) {
       // Left swipe: Snap to next tab
@@ -157,20 +184,21 @@ class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerPro
     } else {
       // Snap back to tab
       _animController.reset();
-      _animation = Tween<double>(begin: _dragOffset, end: 0).animate(_animController)
-        ..addListener(() {
-          setState(() {
-            _dragOffset = _animation.value;
-          });
-        })
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            setState(() {
-              _dragOffset = 0;
-              _isDragging = false;
+      _animation =
+          Tween<double>(begin: _dragOffset, end: 0).animate(_animController)
+            ..addListener(() {
+              setState(() {
+                _dragOffset = _animation.value;
+              });
+            })
+            ..addStatusListener((status) {
+              if (status == AnimationStatus.completed) {
+                setState(() {
+                  _dragOffset = 0;
+                  _isDragging = false;
+                });
+              }
             });
-          }
-        });
       _animController.forward();
     }
   }
@@ -189,9 +217,7 @@ class _SwipeTabWrapperState extends State<_SwipeTabWrapper> with SingleTickerPro
             width: width,
             child: IgnorePointer(
               ignoring: !_isDragging,
-              child: CameraScreen(
-                onVideoRecorded: widget.onVideoRecorded,
-              ),
+              child: CameraScreen(onVideoRecorded: widget.onVideoRecorded),
             ),
           ),
         // Current Tab Screen
@@ -219,6 +245,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const CreatePostScreen(),
     const DecryptScreen(),
     const ProfileScreen(),
+    const SandboxScreen(),
   ];
 
   @override
@@ -267,6 +294,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Sandbox',
           ),
         ],
       ),

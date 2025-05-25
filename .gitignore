@@ -2,3 +2,14 @@
 app/pubspec.lock
 /.venv
 /app/linux
+app/.env
+app/.metadata
+app/pubspec.lock
+app/ios
+app/android
+app/*macos
+*linux
+app/windows
+app/web
+app/lib/.env
+app/pubspec.lock
