@@ -1,6 +1,5 @@
 use starknet::ContractAddress;
 
-/// Struct to represent secret data
 #[derive(Drop, Serde, starknet::Store)]
 pub struct SecretData {
     pub creator: ContractAddress,
@@ -12,13 +11,10 @@ pub struct SecretData {
     pub is_complete: bool,
 }
 
-/// Interface for the SecretManager contract
 #[starknet::interface]
 pub trait ISecretManager<TContractState> {
-    /// Creates a pre-secret and returns the secret hash
     fn create_pre_secret(ref self: TContractState, user: ContractAddress) -> felt252;
     
-    /// Associates post details with an existing secret
     fn associate_post_details(
         ref self: TContractState,
         secret_hash: felt252,
@@ -28,11 +24,9 @@ pub trait ISecretManager<TContractState> {
         duration: u256
     );
     
-    /// Verifies a secret and returns the title and post_id
     fn verify_secret(self: @TContractState, secret_hash: felt252) -> (ByteArray, ByteArray);
 }
 
-/// SecretManager contract implementation
 #[starknet::contract]
 pub mod SecretManager {
     use core::pedersen::pedersen;
@@ -70,7 +64,6 @@ pub mod SecretManager {
         pub title: ByteArray,
     }
 
-    // Salt constant (using felt252 instead of string for Cairo)
     const SALT: felt252 = 'SOMERANDOMSECRET';
 
     #[abi(embed_v0)]
@@ -78,11 +71,9 @@ pub mod SecretManager {
         fn create_pre_secret(ref self: ContractState, user: ContractAddress) -> felt252 {
             let caller = get_caller_address();
             
-            // Create hash using Pedersen hash (Starknet's native hash function)
             let temp_hash = pedersen(caller.into(), user.into());
             let secret_hash = pedersen(temp_hash, SALT);
 
-            // Create initial secret data
             let secret_data = SecretData {
                 creator: caller,
                 user,
@@ -93,10 +84,8 @@ pub mod SecretManager {
                 is_complete: false,
             };
 
-            // Store the secret
             self.secrets.write(secret_hash, secret_data);
 
-            // Emit event
             self.emit(Event::SecretCreated(SecretCreated {
                 secret_hash,
                 creator: caller,
@@ -117,21 +106,17 @@ pub mod SecretManager {
             let caller = get_caller_address();
             let mut secret_data = self.secrets.read(secret_hash);
 
-            // Verify caller is the creator
             assert(secret_data.creator == caller, 'Not creator of secret');
             assert(!secret_data.is_complete, 'Details already associated');
 
-            // Update the secret data
             secret_data.post_id = post_id.clone();
             secret_data.title = title.clone();
             secret_data.description = description;
             secret_data.duration = duration;
             secret_data.is_complete = true;
 
-            // Store the updated data
             self.secrets.write(secret_hash, secret_data);
 
-            // Emit event
             self.emit(Event::PostDetailsAssociated(PostDetailsAssociated {
                 secret_hash,
                 post_id,
