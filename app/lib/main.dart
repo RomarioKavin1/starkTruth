@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/storage_test_screen.dart';
+import 'screens/sandbox_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,7 @@ class MyApp extends StatelessWidget {
         '/feed': (context) => const FeedScreen(),
         '/camera': (context) => const CameraScreen(),
         '/messaging': (context) => const MessagingScreen(),
+        '/sandbox': (context) => const SandboxScreen(),
       },
     );
   }
@@ -236,6 +238,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const CreatePostScreen(),
     const DecryptScreen(),
     const ProfileScreen(),
+    const SandboxScreen(),
   ];
 
   @override
@@ -284,6 +287,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Sandbox',
           ),
         ],
       ),
