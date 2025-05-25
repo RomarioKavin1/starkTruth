@@ -1,3 +1,5 @@
+pub mod secret_manager;
+
 /// Interface representing `HelloContract`.
 /// This interface allows modification and retrieval of the contract balance.
 #[starknet::interface]
