@@ -39,8 +39,9 @@ Future<String> createPreSecret(String userWalletAddress) async {
 
   // Wait for transaction to be accepted
   await waitForAcceptance(transactionHash: txHash, provider: provider);
-  final status = await waitForTransaction(transactionHash: txHash, provider: provider);
-  await Future.delayed(const Duration(seconds: 60));  // Now fetch the receipt
+  await waitForTransaction(transactionHash: txHash, provider: provider);
+  await Future.delayed(const Duration(seconds: 3));
+  await waitForState(transactionHash: txHash, provider: provider, states:  ["SUCCEEDED"]);
   final receipt = await provider.getTransactionReceipt(Felt.fromHexString(txHash));
   final result = receipt.when(
     result: (r) => r,
