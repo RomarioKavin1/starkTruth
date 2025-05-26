@@ -15,20 +15,6 @@ A Flutter-based social media application that uses steganography to provide AI-p
 - Android Studio / Xcode (for mobile development)
 - Git
 
-## Project Structure
-
-```
-starkTruth/
-├── lib/                    # Flutter application source code
-├── contracts/              # Cairo smart contracts
-│   ├── src/               # Contract source files
-│   ├── tests/             # Contract tests
-│   └── README.md          # Contract documentation
-├── steganography/          # Python backend for steganography operations
-├── android/               # Android-specific files
-├── ios/                   # iOS-specific files
-└── web/                   # Web-specific files
-```
 
 ## Features
 
@@ -87,7 +73,7 @@ Copy the server URL from the console (typically `http://localhost:5000`)
 Navigate to the project root directory:
 
 ```bash
-cd starkTruth
+cd app
 ```
 
 Install Flutter dependencies:
