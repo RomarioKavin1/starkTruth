@@ -11,6 +11,7 @@ import '../widgets/loader.dart';
 import '../services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/starknet_service.dart';
+import '../widgets/brutalist_components.dart';
 
 class CameraScreen extends StatefulWidget {
   final void Function(File videoFile)? onVideoRecorded;
@@ -21,27 +22,12 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  // Helper for translucent round controls
-  Widget _buildTranslucentCircle({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFF004AAD),
-        shape: BoxShape.circle,
-      ),
-      child: child,
-    );
-  }
-
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   bool _isRecording = false;
   bool _isInitialized = false;
   bool _isUploading = false;
-
-  // Store the last recorded file for upload
   File? _lastRecordedFile;
-
-  // Timer for recording duration
   Duration _recordingDuration = Duration.zero;
   DateTime? _recordingStartTime;
   Timer? _timer;
@@ -74,7 +60,6 @@ class _CameraScreenState extends State<CameraScreen> {
     if (!_isInitialized) return;
     try {
       if (_isRecording) {
-        // Stop recording
         _timer?.cancel();
         final file = await _controller!.stopVideoRecording();
         setState(() {
@@ -84,7 +69,6 @@ class _CameraScreenState extends State<CameraScreen> {
         _lastRecordedFile = File(file.path);
         _showUploadDialog(context, _lastRecordedFile!);
       } else {
-        // Start recording
         setState(() {
           _isRecording = true;
           _recordingStartTime = DateTime.now();
@@ -93,7 +77,9 @@ class _CameraScreenState extends State<CameraScreen> {
         _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
           if (_recordingStartTime != null && mounted && _isRecording) {
             setState(() {
-              _recordingDuration = DateTime.now().difference(_recordingStartTime!);
+              _recordingDuration = DateTime.now().difference(
+                _recordingStartTime!,
+              );
             });
           }
         });
@@ -108,17 +94,29 @@ class _CameraScreenState extends State<CameraScreen> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: Color(0xFF004AAD),
-            title: const Text('Camera Error', style: TextStyle(color: Colors.white)),
-            content: Text('Failed to record video: $e', style: const TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-                onPressed: () => Navigator.of(ctx).pop(),
+          builder:
+              (ctx) => AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text(
+                  'Camera Error',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                content: Text(
+                  'Failed to record video: $e',
+                  style: const TextStyle(color: Colors.black87, fontSize: 16),
+                ),
+                actions: [
+                  BrutalistButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     }
@@ -128,45 +126,64 @@ class _CameraScreenState extends State<CameraScreen> {
     final textController = TextEditingController();
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Color(0xFF004AAD),
-          title: const Text('Encrypt & Upload', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Encrypt & Upload',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+              letterSpacing: -0.5,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Enter text to encrypt and hide in your video:',
-                style: TextStyle(color: Colors.white70),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: textController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Your secret message',
-                  hintStyle: TextStyle(color: Colors.white38),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF4CAF50))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF4CAF50))),
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+              ),
+              const SizedBox(height: 16),
+              BrutalistTextField(
+                controller: textController,
+                hintText: 'Your secret message',
               ),
             ],
           ),
           actions: [
-            TextButton(
-              child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+            BrutalistButton(
               onPressed: () => Navigator.of(ctx).pop(),
+              backgroundColor: Colors.grey.shade100,
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
-              child: const Text('Send'),
+            const SizedBox(width: 18),
+            BrutalistButton(
               onPressed: () async {
                 final text = textController.text.trim();
                 if (text.isEmpty) return;
                 Navigator.of(ctx).pop();
                 await _uploadVideoWithText(videoFile, text);
               },
+              backgroundColor: const Color(0xFF004AAD),
+              color: Colors.white,
+              child: const Text(
+                'Send',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         );
@@ -220,7 +237,6 @@ class _CameraScreenState extends State<CameraScreen> {
         apiUrl: apiUrl,
         text: secretHash, // Pass the secret hash to your encryption API
       );
-      // 4. Save the received video to storage
       if (result['mp4'] != null && result['mp4_filename'] != null) {
         final mp4Bytes = base64Decode(result['mp4']);
         final filename = result['mp4_filename'] as String;
@@ -231,11 +247,50 @@ class _CameraScreenState extends State<CameraScreen> {
             savePath = '${downloadsDir.path}/$filename';
           }
         }
-        savePath ??= '${(await getApplicationDocumentsDirectory()).path}/$filename';
+        savePath ??=
+            (await getApplicationDocumentsDirectory()).path + '/$filename';
         final encryptedFile = File(savePath);
         await encryptedFile.writeAsBytes(mp4Bytes);
-        // --- Upload to Supabase and create post ---
+
         final supabaseService = SupabaseService();
+        final prefs = await SharedPreferences.getInstance();
+        final walletAddress = prefs.getString('wallet_address') ?? '';
+        if (walletAddress.isEmpty) {
+          setState(() => _isUploading = false);
+          if (!mounted) return;
+          showDialog(
+            context: context,
+            builder:
+                (ctx) => AlertDialog(
+                  backgroundColor: Colors.white,
+                  title: const Text(
+                    'Error',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 24,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  content: const Text(
+                    'No wallet address found. Please log in again.',
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                  ),
+                  actions: [
+                    BrutalistButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+          );
+          return;
+        }
+
+        final profile = await supabaseService.getUserProfile(walletAddress);
+        if (profile == null) {
+          await supabaseService.createUserProfile(walletAddress, '', '');
+        }
         final videoUrl = await supabaseService.uploadVideo(
           encryptedFile.path,
           '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
@@ -256,38 +311,63 @@ class _CameraScreenState extends State<CameraScreen> {
           description: stringToFeltHexList(" "),
           duration: 0,
         );
+
         setState(() => _isUploading = false);
         if (!mounted) return;
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: Color(0xFF004AAD),
-            title: const Text('Success!', style: TextStyle(color: Color(0xFF4CAF50))),
-            content: Text('Your encrypted video has been uploaded and posted!', style: const TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-                onPressed: () => Navigator.of(ctx).pop(),
+          builder:
+              (ctx) => AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text(
+                  'Success!',
+                  style: TextStyle(
+                    color: Color(0xFF004AAD),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                content: const Text(
+                  'Your encrypted video has been uploaded and posted!',
+                  style: TextStyle(color: Colors.black87, fontSize: 16),
+                ),
+                actions: [
+                  BrutalistButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       } else {
         setState(() => _isUploading = false);
         if (!mounted) return;
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: Color(0xFF004AAD),
-            title: const Text('Error', style: TextStyle(color: Colors.red)),
-            content: const Text('No video data received from server.', style: TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-                onPressed: () => Navigator.of(ctx).pop(),
+          builder:
+              (ctx) => AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text(
+                  'Error',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                content: const Text(
+                  'No video data received from server.',
+                  style: TextStyle(color: Colors.black87, fontSize: 16),
+                ),
+                actions: [
+                  BrutalistButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } catch (e) {
@@ -296,17 +376,29 @@ class _CameraScreenState extends State<CameraScreen> {
       print(e);
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Color(0xFF004AAD),
-          title: const Text('Error', style: TextStyle(color: Colors.red)),
-          content: Text('Failed to upload: $e', style: const TextStyle(color: Colors.white)),
-          actions: [
-            TextButton(
-              child: const Text('OK', style: TextStyle(color: Colors.white)),
-              onPressed: () => Navigator.of(ctx).pop(),
+        builder:
+            (ctx) => AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                'Error',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              content: Text(
+                'Failed to upload: $e',
+                style: const TextStyle(color: Colors.black87, fontSize: 16),
+              ),
+              actions: [
+                BrutalistButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     }
   }
@@ -321,18 +413,63 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF004AAD),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.black),
+        ),
+        leading: Container(
+          margin: const EdgeInsets.only(left: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Stark',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: -1,
+                ),
+              ),
+              const Text(
+                'Truth',
+                style: TextStyle(
+                  color: Color(0xFF004AAD),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: -1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
+        title: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
+          child: const Text(
+            'Record',
+            style: TextStyle(
+              color: Color(0xFF004AAD),
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           GestureDetector(
             onHorizontalDragEnd: (details) {
-              if (details.primaryVelocity != null) {
-                if (details.primaryVelocity! > 0) {
-                  // Swipe right: move to next tab in navigation
-                  Navigator.pop(context, 'nextTab');
-                }
-                // Optionally, handle swipe left for future features
+              if (details.primaryVelocity != null &&
+                  details.primaryVelocity! > 0) {
+                Navigator.pop(context, 'nextTab');
               }
             },
             child: Stack(
@@ -340,158 +477,186 @@ class _CameraScreenState extends State<CameraScreen> {
               children: [
                 _isInitialized && _controller != null
                     ? Stack(
-                        children: [
-                          CameraPreview(_controller!),
-                          if (_isRecording)
-                            Positioned(
-                              top: 48,
-                              left: 0,
-                              right: 0,
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.fiber_manual_record, color: Colors.red, size: 20),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatDuration(_recordingDuration),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
+                      children: [
+                        CameraPreview(_controller!),
+                        if (_isRecording)
+                          Positioned(
+                            top: 16,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: BrutalistContainer(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.fiber_manual_record,
+                                      color: Colors.red,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _formatDuration(_recordingDuration),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        letterSpacing: -0.5,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                        ],
-                      )
-                    : Container(color: Colors.black),
+                          ),
+                      ],
+                    )
+                    : Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: BrutalistContainer(
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 48,
+                                color: Color(0xFF004AAD),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Initializing camera...',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
-                // Top controls (back, flash, switch)
+                // Top controls
                 Positioned(
-                  top: 48,
+                  top: 16,
                   left: 16,
                   right: 16,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Back button
-                      _buildTranslucentCircle(
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
+                      BrutalistButton(
+                        onPressed: () => Navigator.pop(context),
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black,
+                          size: 24,
                         ),
                       ),
-                      // Switch camera (optional, add logic if needed)
-                      _buildTranslucentCircle(
-                        child: IconButton(
-                          icon: const Icon(Icons.cameraswitch, color: Colors.white),
-                          onPressed: () {
-                            // Optional: implement camera switch
-                          },
+                      BrutalistButton(
+                        onPressed: () {
+                          // Optional: implement camera switch
+                        },
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.cameraswitch,
+                          color: Colors.black,
+                          size: 24,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Bottom controls (gallery, record/stop, more)
+                // Bottom controls
                 Positioned(
-                  bottom: 48,
+                  bottom: 56,
                   left: 0,
                   right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTranslucentCircle(
-                        child: IconButton(
-                          icon: const Icon(Icons.photo_library, color: Colors.white),
-                          onPressed: () {
-                            // TODO: Open gallery
-                          },
+                      Text(
+                        _isRecording
+                            ? 'Tap to stop recording'
+                            : 'Tap to start recording',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: -0.5,
                         ),
                       ),
+                      const SizedBox(height: 24),
                       GestureDetector(
                         onTap: _isInitialized ? _onRecordButtonPressed : null,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _isRecording ? Colors.red.withOpacity(0.7) : Colors.white.withOpacity(0.7),
-                            border: Border.all(
+                        child: BrutalistContainer(
+                          width: 80,
+                          height: 80,
+                          padding: const EdgeInsets.all(4),
+                          child: Container(
+                            decoration: BoxDecoration(
                               color: _isRecording ? Colors.red : Colors.white,
-                              width: 4,
+                              shape: BoxShape.rectangle,
+                            ),
+                            child: Icon(
+                              _isRecording
+                                  ? Icons.stop
+                                  : Icons.fiber_manual_record,
+                              color: _isRecording ? Colors.white : Colors.red,
+                              size: 40,
                             ),
                           ),
-                          child: Icon(
-                            _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                            color: _isRecording ? Colors.white : Colors.red,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                      _buildTranslucentCircle(
-                        child: IconButton(
-                          icon: const Icon(Icons.more_vert, color: Colors.white),
-                          onPressed: () {},
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-                // Centered Title (Instagram-style overlay)
-                Positioned(
-                  top: 120,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: RichText(
-                      text: const TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'CREATE YOUR ',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'DEEP TRUTH',
-                            style: TextStyle(
-                              color: Color(0xFF4CAF50),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
-                          ),
-                          TextSpan(
-                            text: ' NOW',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],
             ),
           ),
           if (_isUploading)
-            const ThemedLoader(message: 'Encrypting and uploading your video...'),
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: BrutalistContainer(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF004AAD),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Processing your video...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

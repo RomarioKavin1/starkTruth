@@ -59,56 +59,62 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 48,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false, // Remove default back button
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: Colors.black),
         ),
-        leading: Container(
-          margin: const EdgeInsets.only(left: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+        title: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const Text(
-                'Stark',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  letterSpacing: -1,
+              // Centered title
+              const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Feed',
+                  style: TextStyle(
+                    color: Color(0xFF004AAD),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              // Left-aligned logo
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Stark',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'Truth',
+                      style: TextStyle(
+                        color: Color(0xFF004AAD),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        centerTitle: true,
-        title: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-          child: const Text(
-            'Feed',
-            style: TextStyle(
-              color: Color(0xFF004AAD),
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: const Icon(Icons.refresh, color: Colors.black, size: 20),
-              onPressed: _isLoading ? null : _loadPosts,
-            ),
-          ),
-        ],
       ),
+
       body:
           _isLoading
               ? Center(
