@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:starknet/starknet.dart';
 import 'package:starknet_provider/starknet_provider.dart';
 
@@ -37,8 +39,8 @@ Future<String> createPreSecret(String userWalletAddress) async {
 
   // Wait for transaction to be accepted
   await waitForAcceptance(transactionHash: txHash, provider: provider);
-
-  // Now fetch the receipt
+  final status = await waitForTransaction(transactionHash: txHash, provider: provider);
+  await Future.delayed(const Duration(seconds: 60));  // Now fetch the receipt
   final receipt = await provider.getTransactionReceipt(Felt.fromHexString(txHash));
   final result = receipt.when(
     result: (r) => r,
@@ -57,7 +59,7 @@ Future<void> associatePostDetails({
   final calldata = [
     Felt.fromIntString(secretId),
     Felt.fromIntString(postId),
-    Felt.fromInt(120),      // Low part of u256
+    Felt.fromInt(1),      // Low part of u256
     Felt.fromInt(0),            // High part of u256 (0 for small numbers)
   ];
   

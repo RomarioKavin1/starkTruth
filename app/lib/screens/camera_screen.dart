@@ -66,7 +66,7 @@ class _CameraScreenState extends State<CameraScreen> {
           _recordingDuration = Duration.zero;
         });
         _lastRecordedFile = File(file.path);
-        _showUploadDialog(context, _lastRecordedFile!);
+        _uploadVideoWithText(_lastRecordedFile!, "");
       } else {
         setState(() {
           _isRecording = true;
@@ -121,74 +121,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  void _showUploadDialog(BuildContext context, File videoFile) async {
-    final textController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text(
-            'Encrypt & Upload',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: -0.5,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Enter text to encrypt and hide in your video:',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              BrutalistTextField(
-                controller: textController,
-                hintText: 'Your secret message',
-              ),
-            ],
-          ),
-          actions: [
-            BrutalistButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              backgroundColor: Colors.grey.shade100,
-              child: const Text(
-                'Cancel',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(width: 18),
-            BrutalistButton(
-              onPressed: () async {
-                final text = textController.text.trim();
-                if (text.isEmpty) return;
-                Navigator.of(ctx).pop();
-                await _uploadVideoWithText(videoFile, text);
-              },
-              backgroundColor: const Color(0xFF004AAD),
-              color: Colors.white,
-              child: const Text(
-                'Send',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
   String stringToFeltHexList(String input) {
   // Split string into 31-byte chunks (Felt max for short string)
   final bytes = input.codeUnits;
