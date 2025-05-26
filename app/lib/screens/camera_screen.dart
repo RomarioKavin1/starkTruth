@@ -209,8 +209,10 @@ class _CameraScreenState extends State<CameraScreen> {
         );
         return;
       }
+      print(walletAddress);
       // 2. Call create_pre_secret on StarkNet contract
       final secretHash = await createPreSecret(walletAddress);
+      print(secretHash);
       // 3. Encrypt video with secretHash
       const apiUrl = 'http://10.0.2.2:5000/encrypt';
       final result = await sendVideoForEncryption(

@@ -6,7 +6,7 @@ import 'dart:convert';
 
 final provider = JsonRpcProvider(nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io'));
 const contractAddress = '0x027d49de9a9f841cdd36bba64b68736d170bf374b9e8a1c22c826406a17d20fa';
-const secretAccountAddress = "0x0148ed8444f6edb3bd5cfc33ffe63787db2d7741eaacb06ae1d3e8a9e6dd3ca2";
+const secretAccountAddress = "0x06Ca2a8a32DF51babaC26EC00e43357c18FcCEFE2C04320aa455F41508316d03";
 const secretAccountPrivateKey = "0x022aece03eecb92ae673a4de2dbfe5f7d1af696f3e0a18c1238953c89b5ea9e0";
 final signeraccount = getAccount(
   accountAddress: Felt.fromHexString(secretAccountAddress),
@@ -15,6 +15,12 @@ final signeraccount = getAccount(
 );
 
 Future<String> createPreSecret(String userWalletAddress) async {
+  final signeraccount = getAccount(
+  accountAddress: Felt.fromHexString(secretAccountAddress),
+  privateKey: Felt.fromHexString(secretAccountPrivateKey),
+  nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io'),
+);
+  print(signeraccount.accountAddress);
   print("Calling create_pre_secret with: $userWalletAddress");
   final response = await signeraccount.execute(functionCalls: [
     FunctionCall(
@@ -66,6 +72,22 @@ List<String> stringToFeltHexList(String input) {
   return felts;
 }
 
+// Helper: Serialize a Dart string to Cairo ByteArray calldata (length + bytes as felts)
+List<Felt> stringToByteArrayFelts(String input) {
+  final bytes = utf8.encode(input);
+  return [
+    Felt.fromInt(bytes.length),
+    ...bytes.map((b) => Felt.fromInt(b)),
+  ];
+}
+
+// Helper: Serialize int to Cairo u256 (low, high)
+List<Felt> intToU256Felts(int value) {
+  final low = value & ((1 << 128) - 1);
+  final high = value >> 128;
+  return [Felt.fromInt(low), Felt.fromInt(high)];
+}
+
 Future<void> associatePostDetails({
   required String secretHash,
   required String postId,
@@ -78,31 +100,43 @@ Future<void> associatePostDetails({
   if (postId.contains('/')) {
     filename = postId.split('/').last;
   }
-  
-  // Compress and encode just the filename
-  final postIdFelts = compressAndHexEncode(filename);
-  final titleFelts = ["0x0"];
-  final descFelts = ["0x0"];
-  // Flatten calldata: secretHash, postIdFelts..., titleFelts..., descFelts..., duration
+
+  // Properly serialize ByteArray and u256
+  final postIdFelts = stringToByteArrayFelts(filename);
+  final titleFelts = stringToByteArrayFelts(title);
+  final descFelts = stringToByteArrayFelts(description);
+  final durationFelts = intToU256Felts(duration);
+
+  // Flatten calldata: secretHash, postIdFelts..., titleFelts..., descFelts..., durationFelts...
   final calldata = [
-    Felt.fromHexString(secretHash),
-    ...postIdFelts.map((f) => Felt.fromHexString(f)),
-    ...titleFelts.map((f) => Felt.fromHexString(f)),
-    ...descFelts.map((f) => Felt.fromHexString(f)),
-    Felt.fromInt(duration),
+    Felt.fromHexString("0x20a807ce1a204867e63c7599c894722a509d5439ce70eb1ad0c0a874a5ed6a0"),
+    ...postIdFelts,
+    ...titleFelts,
+    ...descFelts,
+    ...durationFelts,
   ];
   print(calldata);
-  final response = await signeraccount.execute(functionCalls: [
-    FunctionCall(
-      contractAddress: Felt.fromHexString(contractAddress),
-      entryPointSelector: getSelectorByName("associate_post_details"),
-      calldata: calldata,
-    ),
-  ]);
-  print(response);
-  final txHash = response.when(
-    result: (result) => result.transaction_hash,
-    error: (err) => throw Exception("Failed to execute associate_post_details"),
+  final signeraccount = getAccount(
+    accountAddress: Felt.fromHexString(secretAccountAddress),
+    privateKey: Felt.fromHexString(secretAccountPrivateKey),
+    nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io'),
   );
-  await waitForAcceptance(transactionHash: txHash, provider: provider);
+  try {
+    final response = await signeraccount.execute(functionCalls: [
+      FunctionCall(
+        contractAddress: Felt.fromHexString(contractAddress),
+        entryPointSelector: getSelectorByName("associate_post_details"),
+        calldata: calldata,
+      ),
+    ]);
+    print(response);
+    final txHash = response.when(
+      result: (result) => result.transaction_hash,
+      error: (err) => throw Exception("Failed to execute associate_post_details"),
+    );
+    print('executed');
+    await waitForAcceptance(transactionHash: txHash, provider: provider);
+  } catch (e) {
+    print(e);
+  }
 } 
