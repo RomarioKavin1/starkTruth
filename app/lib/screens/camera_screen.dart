@@ -177,7 +177,7 @@ class _CameraScreenState extends State<CameraScreen> {
       final secretHash = await createPreSecret(walletAddress);
       print(secretHash);
       // 3. Encrypt video with secretHash
-      const apiUrl = dotenv.env['SERVER_URL']! + '/encrypt';
+      final apiUrl = dotenv.env['SERVER_URL']! + '/encrypt';
       final result = await sendVideoForEncryption(
         videoFile: videoFile,
         apiUrl: apiUrl,
