@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:starknet/starknet.dart';
 import 'package:starknet_provider/starknet_provider.dart';
-import 'dart:convert';
 
 final provider = JsonRpcProvider(nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io'));
-const contractAddress = '0x027d49de9a9f841cdd36bba64b68736d170bf374b9e8a1c22c826406a17d20fa';
+const contractAddress = '0x01cac254acbcd5c2a68c3a5aa04b58466d6cb0e578a431c0f4a68c2790dff610';
 const secretAccountAddress = "0x06Ca2a8a32DF51babaC26EC00e43357c18FcCEFE2C04320aa455F41508316d03";
 const secretAccountPrivateKey = "0x022aece03eecb92ae673a4de2dbfe5f7d1af696f3e0a18c1238953c89b5ea9e0";
 final signeraccount = getAccount(
@@ -37,90 +34,41 @@ Future<String> createPreSecret(String userWalletAddress) async {
       throw Exception("Failed to execute create_pre_secret: $err");
     },
   );
-  return txHash;
-}
 
-// Helper: Compress string and convert to list of felt hex strings (0x...)
-List<String> compressAndHexEncode(String input) {
-  // Compress the input string using zlib
-  final compressed = zlib.encode(utf8.encode(input));
-  // Chunk into 31 bytes per felt
-  List<String> felts = [];
-  for (int i = 0; i < compressed.length; i += 31) {
-    final chunk = compressed.sublist(i, i + 31 > compressed.length ? compressed.length : i + 31);
-    final hexString = chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    felts.add('0x$hexString');
-  }
-  return felts;
-}
+  // Wait for transaction to be accepted
+  await waitForAcceptance(transactionHash: txHash, provider: provider);
 
-List<String> stringToFeltHexList(String input) {
-  final bytes = input.codeUnits;
-  List<String> felts = [];
-  for (int i = 0; i < bytes.length; i += 31) {
-    final chunk = bytes.sublist(i, i + 31 > bytes.length ? bytes.length : i + 31);
-    if (chunk.isEmpty) {
-      felts.add('0x0');
-      continue;
-    }
-    final hexString = chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    // Ensure hexString is not empty
-    felts.add('0x${hexString.isEmpty ? '0' : hexString}');
-  }
-  // If input was empty, ensure at least one felt
-  if (felts.isEmpty) felts.add('0x0');
-  return felts;
-}
+  // Now fetch the receipt
+  final receipt = await provider.getTransactionReceipt(Felt.fromHexString(txHash));
+  final result = receipt.when(
+    result: (r) => r,
+    error: (err) => throw Exception("Failed to get receipt: $err"),
+  );
 
-// Helper: Serialize a Dart string to Cairo ByteArray calldata (length + bytes as felts)
-List<Felt> stringToByteArrayFelts(String input) {
-  final bytes = utf8.encode(input);
-  return [
-    Felt.fromInt(bytes.length),
-    ...bytes.map((b) => Felt.fromInt(b)),
-  ];
-}
-
-// Helper: Serialize int to Cairo u256 (low, high)
-List<Felt> intToU256Felts(int value) {
-  final low = value & ((1 << 128) - 1);
-  final high = value >> 128;
-  return [Felt.fromInt(low), Felt.fromInt(high)];
+  print(result.events[1].data);
+  final secrethash=result.events[1].data?[2];
+  return secrethash.toString();
 }
 
 Future<void> associatePostDetails({
-  required String secretHash,
-  required String postId,
-  required String title,
-  required String description,
-  required int duration,
+  required String secretId,    // Changed from secretHash to match contract
+  required String postId,      // decimal string
 }) async {
-  // Extract filename from URL if it's a full URL
-  String filename = postId;
-  if (postId.contains('/')) {
-    filename = postId.split('/').last;
-  }
-
-  // Properly serialize ByteArray and u256
-  final postIdFelts = stringToByteArrayFelts(filename);
-  final titleFelts = stringToByteArrayFelts(title);
-  final descFelts = stringToByteArrayFelts(description);
-  final durationFelts = intToU256Felts(duration);
-
-  // Flatten calldata: secretHash, postIdFelts..., titleFelts..., descFelts..., durationFelts...
   final calldata = [
-    Felt.fromHexString("0x20a807ce1a204867e63c7599c894722a509d5439ce70eb1ad0c0a874a5ed6a0"),
-    ...postIdFelts,
-    ...titleFelts,
-    ...descFelts,
-    ...durationFelts,
+    Felt.fromIntString(secretId),
+    Felt.fromIntString(postId),
+    Felt.fromInt(120),      // Low part of u256
+    Felt.fromInt(0),            // High part of u256 (0 for small numbers)
   ];
-  print(calldata);
+  
+  print("Calldata: $calldata");
+  
   final signeraccount = getAccount(
     accountAddress: Felt.fromHexString(secretAccountAddress),
     privateKey: Felt.fromHexString(secretAccountPrivateKey),
     nodeUri: Uri.parse('https://starknet-sepolia.public.blastapi.io'),
   );
+  
   try {
     final response = await signeraccount.execute(functionCalls: [
       FunctionCall(
@@ -129,14 +77,21 @@ Future<void> associatePostDetails({
         calldata: calldata,
       ),
     ]);
-    print(response);
-    final txHash = response.when(
-      result: (result) => result.transaction_hash,
-      error: (err) => throw Exception("Failed to execute associate_post_details"),
+    
+    print("associate complete");
+    
+    response.when(
+      result: (result) {
+        print("Transaction hash: ${result.transaction_hash}");
+        return result.transaction_hash;
+      },
+      error: (err) {
+        print("Error details: $err");
+        throw Exception("Failed to execute associate_post_details: $err");
+      },
     );
-    print('executed');
-    await waitForAcceptance(transactionHash: txHash, provider: provider);
   } catch (e) {
-    print(e);
+    print("Exception caught: $e");
+    rethrow;
   }
-} 
+}

@@ -7,7 +7,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:path_provider/path_provider.dart';
 import '../services/steno_service.dart';
-import '../widgets/loader.dart';
 import '../services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/starknet_service.dart';
@@ -240,6 +239,7 @@ class _CameraScreenState extends State<CameraScreen> {
       if (result['mp4'] != null && result['mp4_filename'] != null) {
         final mp4Bytes = base64Decode(result['mp4']);
         final filename = result['mp4_filename'] as String;
+
         String? savePath;
         if (Theme.of(context).platform == TargetPlatform.android) {
           final downloadsDir = await getExternalStorageDirectory();
@@ -291,25 +291,21 @@ class _CameraScreenState extends State<CameraScreen> {
         if (profile == null) {
           await supabaseService.createUserProfile(walletAddress, '', '');
         }
+        final video_filename=DateTime.now().millisecondsSinceEpoch.toString();
         final videoUrl = await supabaseService.uploadVideo(
           encryptedFile.path,
-          '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
+          '${video_filename}.mp4',
         );
         await supabaseService.createPost(
           walletAddress: walletAddress,
           videoUrl: videoUrl,
           encryptedContent: text,
         );
-        print(stringToFeltHexList(videoUrl));
-        print(secretHash);
-        print(stringToFeltHexList(secretHash));
-        // 5. Call associate_post_details on StarkNet contract
+
+        // 5. Call associate_post_details on StarkNet contract with new format
         await associatePostDetails(
-          secretHash: secretHash,
-          postId: stringToFeltHexList(videoUrl),
-          title: stringToFeltHexList(' '), // You can customize this
-          description: stringToFeltHexList(" "),
-          duration: 0,
+          secretId: secretHash,
+          postId: video_filename,
         );
 
         setState(() => _isUploading = false);

@@ -240,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 )
                                 : const Text(
-                                  'Login',
+                                  'Sign Up',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
