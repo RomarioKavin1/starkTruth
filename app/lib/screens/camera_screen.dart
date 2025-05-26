@@ -251,7 +251,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
         final profile = await supabaseService.getUserProfile(walletAddress);
         if (profile == null) {
-          await supabaseService.createUserProfile(walletAddress);
+          await supabaseService.createUserProfile(walletAddress, '', '');
         }
         final videoUrl = await supabaseService.uploadVideo(
           encryptedFile.path,

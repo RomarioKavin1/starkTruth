@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/brutalist_components.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -28,7 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _loadProfile() async {
     try {
-      const walletAddress = 'current_user_wallet';
+      final prefs = await SharedPreferences.getInstance();
+      final walletAddress = prefs.getString('wallet_address') ?? '';
       final profile = await _supabaseService.getUserProfile(walletAddress);
 
       if (profile != null) {
@@ -36,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           _profile = profile;
           _isLoading = false;
         });
-        _loadVideos();
+        _loadVideos(walletAddress);
       }
     } catch (e) {
       setState(() {
@@ -46,10 +48,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  Future<void> _loadVideos() async {
+  Future<void> _loadVideos(String walletAddress) async {
     try {
-      const walletAddress = 'current_user_wallet';
-      final videos = await _supabaseService.getUserVideos(walletAddress);
+      final videos = await _supabaseService.getUserPosts(walletAddress);
       setState(() {
         _videos = videos;
       });
@@ -170,7 +171,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                     padding: const EdgeInsets.all(16),
                     child: Center(
                       child: Text(
-                        _profile?['wallet_address']?[2].toUpperCase() ?? '?',
+                        (_profile?['username'] ??
+                                _profile?['wallet_address'] ??
+                                '?')[0]
+                            .toUpperCase(),
                         style: const TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
@@ -179,6 +183,30 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Username
+                  Text(
+                    _profile?['username'] ?? 'Unknown',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Bio
+                  if (_profile?['bio'] != null && _profile!['bio'].isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        _profile!['bio'],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   const SizedBox(height: 16),
                   // Wallet address
                   BrutalistContainer(
