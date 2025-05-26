@@ -7,6 +7,7 @@ import 'screens/decrypt_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/messaging_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/supabase_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/sandbox_screen.dart';
@@ -66,8 +67,9 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
       routes: {
+        '/login': (context) => const LoginScreen(),
         '/main': (context) => const MainNavigationScreen(),
         '/feed': (context) => const FeedScreen(),
         '/camera': (context) => const CameraScreen(),
