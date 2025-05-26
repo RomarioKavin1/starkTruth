@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/brutalist_components.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _walletController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _bioController = TextEditingController();
   bool _isLoading = false;
   String? _error;
   final _supabaseService = SupabaseService();
@@ -26,16 +29,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final walletAddress = _walletController.text.trim();
+      final username = _usernameController.text.trim();
+      final bio = _bioController.text.trim();
       final profile = await _supabaseService.getUserProfile(walletAddress);
-      
+
       if (profile == null) {
-        // Create new profile if user doesn't exist
-        await _supabaseService.createUserProfile(walletAddress);
+        await _supabaseService.createUserProfile(walletAddress, username, bio);
       }
 
-      // Store wallet address in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('wallet_address', walletAddress);
+      await prefs.setString('username', username);
+      await prefs.setString('bio', bio);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/main');
@@ -56,13 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _walletController.dispose();
+    _usernameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -73,68 +80,174 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF004AAD)),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Enter Wallet Address',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _walletController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Enter your wallet address',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(Icons.account_balance_wallet, color: Color(0xFF004AAD)),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your wallet address';
-                      }
-                      if (!value.startsWith('0x') || value.length < 42) {
-                        return 'Please enter a valid wallet address';
-                      }
-                      return null;
-                    },
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF004AAD),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  // Logo
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Stark',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                          color: Colors.black,
                         ),
                       ),
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                      const Text(
+                        'Truth',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                          color: Color(0xFF004AAD),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 48),
+                  // Wallet Address
+                  BrutalistContainer(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Wallet Address',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        BrutalistTextField(
+                          controller: _walletController,
+                          hintText: 'Enter your wallet address',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your wallet address';
+                            }
+                            if (!value.startsWith('0x') || value.length < 42) {
+                              return 'Please enter a valid wallet address';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Username
+                  BrutalistContainer(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Username',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        BrutalistTextField(
+                          controller: _usernameController,
+                          hintText: 'Enter your username',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a username';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Bio
+                  BrutalistContainer(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Bio',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        BrutalistTextField(
+                          controller: _bioController,
+                          hintText: 'Enter your bio',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a bio';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 24),
+                    BrutalistContainer(
+                      backgroundColor: Colors.red.shade50,
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                               ),
-                            )
-                          : const Text('Login'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                  // Login Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: BrutalistButton(
+                      onPressed: _isLoading ? null : _login,
+                      backgroundColor: const Color(0xFF004AAD),
+                      child: Container(
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                      ),
                     ),
                   ),
                 ],

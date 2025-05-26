@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import '../services/steno_service.dart';
 import '../services/decrypt_service.dart';
+import '../widgets/brutalist_components.dart';
 
 class SandboxScreen extends StatefulWidget {
   const SandboxScreen({super.key});
@@ -26,7 +27,7 @@ class _SandboxScreenState extends State<SandboxScreen> {
   File? _encryptedVideo;
   String? _decryptedMessage;
   final _decryptService = DecryptService();
-  final _apiUrl = 'http://192.168.1.3:5000/encrypt';
+  final _apiUrl = 'http://192.168.1.4:5000/encrypt';
 
   @override
   void initState() {
@@ -98,7 +99,6 @@ class _SandboxScreenState extends State<SandboxScreen> {
         _recordedVideo = File(video.path);
       });
 
-      // Initialize video controller for preview
       _videoController?.dispose();
       _videoController = VideoPlayerController.file(_recordedVideo!)
         ..initialize().then((_) {
@@ -107,7 +107,6 @@ class _SandboxScreenState extends State<SandboxScreen> {
           _videoController?.pause();
         });
 
-      // Dispose camera after recording
       await _cameraController?.dispose();
       setState(() {
         _cameraController = null;
@@ -140,7 +139,6 @@ class _SandboxScreenState extends State<SandboxScreen> {
         apiUrl: _apiUrl,
       );
 
-      // Save the encrypted video
       final tempDir = await getTemporaryDirectory();
       final encryptedPath =
           '${tempDir.path}/encrypted_${DateTime.now().millisecondsSinceEpoch}.mp4';
@@ -152,7 +150,6 @@ class _SandboxScreenState extends State<SandboxScreen> {
         _encryptedVideo = encryptedFile;
       });
 
-      // Initialize video controller for encrypted video preview
       _videoController?.dispose();
       _videoController = VideoPlayerController.file(_encryptedVideo!)
         ..initialize().then((_) {
@@ -200,227 +197,304 @@ class _SandboxScreenState extends State<SandboxScreen> {
     }
   }
 
-  Widget _buildMessageCard(String title, String message) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(message, style: const TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Steganography Sandbox'), elevation: 2),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false, // Remove default back button
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.black),
+        ),
+        title: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Centered title
+              const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Sandbox',
+                  style: TextStyle(
+                    color: Color(0xFF004AAD),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              // Left-aligned logo
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Stark',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'Truth',
+                      style: TextStyle(
+                        color: Color(0xFF004AAD),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Camera preview (only shown when recording is not done)
             if (_isInitialized &&
                 _cameraController != null &&
                 _recordedVideo == null)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: _cameraController!.value.aspectRatio,
-                    child: CameraPreview(_cameraController!),
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            // Recording controls (only shown when camera is active)
-            if (_cameraController != null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : (_isRecording ? _stopRecording : _startRecording),
-                    icon: Icon(_isRecording ? Icons.stop : Icons.videocam),
-                    label: Text(
-                      _isRecording ? 'Stop Recording' : 'Start Recording',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+              BrutalistContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Camera Preview',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                  ),
-                ],
-              ),
-
-            const SizedBox(height: 16),
-
-            // Message input
-            if (_recordedVideo != null)
-              TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  labelText: 'Message to Hide',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.message),
-                ),
-                maxLines: 3,
-              ),
-
-            const SizedBox(height: 16),
-
-            // Video preview
-            if (_videoController != null &&
-                _videoController!.value.isInitialized)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                    const SizedBox(height: 16),
+                    AspectRatio(
+                      aspectRatio: _cameraController!.value.aspectRatio,
+                      child: CameraPreview(_cameraController!),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: BrutalistButton(
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : (_isRecording
+                                    ? _stopRecording
+                                    : _startRecording),
+                        backgroundColor:
+                            _isRecording ? Colors.red : const Color(0xFF004AAD),
+                        color: Colors.white,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isRecording ? Icons.stop : Icons.videocam,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isRecording
+                                  ? 'Stop Recording'
+                                  : 'Start Recording',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: _videoController!.value.aspectRatio,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        VideoPlayer(_videoController!),
-                        IconButton(
-                          icon: Icon(
-                            _videoController!.value.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            size: 50,
+              ),
+
+            if (_recordedVideo != null) ...[
+              const SizedBox(height: 16),
+              BrutalistContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Message to Hide',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    BrutalistTextField(
+                      controller: _messageController,
+                      hintText: 'Enter your secret message...',
+                      keyboardType: TextInputType.multiline,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (_videoController != null &&
+                _videoController!.value.isInitialized) ...[
+              const SizedBox(height: 16),
+              BrutalistContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Video Preview',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AspectRatio(
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          VideoPlayer(_videoController!),
+                          BrutalistIconButton(
+                            onPressed: () {
+                              setState(() {
+                                _videoController!.value.isPlaying
+                                    ? _videoController!.pause()
+                                    : _videoController!.play();
+                              });
+                            },
+                            icon:
+                                _videoController!.value.isPlaying
+                                    ? Icons.pause
+                                    : Icons.play_arrow,
+                            size: 32,
                             color: Colors.white,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _videoController!.value.isPlaying
-                                  ? _videoController!.pause()
-                                  : _videoController!.play();
-                            });
-                          },
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (_recordedVideo != null) ...[
+              const SizedBox(height: 16),
+              BrutalistButton(
+                onPressed: _isLoading ? null : _encryptVideo,
+                isLoading: _isLoading,
+                backgroundColor: const Color(0xFF004AAD),
+                color: Colors.white,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isLoading ? 'Encrypting...' : 'Encrypt Video',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (_encryptedVideo != null) ...[
+              const SizedBox(height: 16),
+              BrutalistButton(
+                onPressed: _isLoading ? null : _decryptVideo,
+                isLoading: _isLoading,
+                backgroundColor: const Color(0xFF004AAD),
+                color: Colors.white,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_open, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isLoading ? 'Decrypting...' : 'Decrypt Video',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (_decryptedMessage != null) ...[
+              const SizedBox(height: 16),
+              BrutalistContainer(
+                backgroundColor: Colors.green.shade50,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'Decrypted Message',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _decryptedMessage!,
+                      style: const TextStyle(fontSize: 16, height: 1.5),
+                    ),
+                  ],
                 ),
               ),
+            ],
 
-            const SizedBox(height: 16),
-
-            // Encrypt button
-            if (_recordedVideo != null)
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _encryptVideo,
-                icon:
-                    _isLoading
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.lock),
-                label: Text(_isLoading ? 'Encrypting...' : 'Encrypt Video'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            // Decrypt button (only shown after encryption)
-            if (_encryptedVideo != null)
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _decryptVideo,
-                icon:
-                    _isLoading
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.lock_open),
-                label: Text(_isLoading ? 'Decrypting...' : 'Decrypt Video'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            // Decrypted message display
-            if (_decryptedMessage != null)
-              _buildMessageCard('Decrypted Message', _decryptedMessage!),
-
-            // Error message
-            if (_error != null)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade300),
-                ),
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              BrutalistContainer(
+                backgroundColor: Colors.red.shade50,
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade900),
+                    const Icon(Icons.error_outline, color: Colors.red),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _error!,
-                        style: TextStyle(color: Colors.red.shade900),
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+            ],
           ],
         ),
       ),

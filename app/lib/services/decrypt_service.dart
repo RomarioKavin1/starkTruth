@@ -6,7 +6,7 @@ class DecryptService {
   final String _serverUrl;
 
   DecryptService({String? serverUrl})
-    : _serverUrl = serverUrl ?? 'http://192.168.1.3:5000';
+    : _serverUrl = serverUrl ?? 'http://192.168.1.4:5000';
 
   Future<String> decryptVideo(File videoFile) async {
     try {

@@ -5,7 +5,7 @@ import '../models/post.dart';
 
 import 'package:video_player/video_player.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final Post post;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
@@ -20,50 +20,111 @@ class PostCard extends StatelessWidget {
   });
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleHover(bool isHovered) {
+    setState(() {
+      _isHovered = isHovered;
+      if (isHovered) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     Widget contentWidget;
-    if (post.type == PostType.photo && post.mediaPath != null && post.mediaPath!.isNotEmpty) {
+    if (widget.post.type == PostType.photo &&
+        widget.post.mediaPath != null &&
+        widget.post.mediaPath!.isNotEmpty) {
       contentWidget = Row(
         children: [
           Expanded(
             child: SizedBox(
               height: 240,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: post.mediaPath!.startsWith('http')
-                    ? Image.network(
-                        post.mediaPath!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.black,
-                          child: const Center(
-                            child: Icon(Icons.broken_image, color: Colors.white, size: 48),
-                          ),
+                borderRadius: BorderRadius.circular(4),
+                child:
+                    widget.post.mediaPath!.startsWith('http')
+                        ? Image.network(
+                          widget.post.mediaPath!,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (context, error, stackTrace) => Container(
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.black,
+                                    size: 48,
+                                  ),
+                                ),
+                              ),
+                        )
+                        : Image.asset(
+                          widget.post.mediaPath!,
+                          fit: BoxFit.cover,
                         ),
-                      )
-                    : Image.asset(post.mediaPath!, fit: BoxFit.cover),
               ),
             ),
           ),
         ],
       );
-    } else if (post.type == PostType.video && post.mediaPath != null && post.mediaPath!.isNotEmpty) {
+    } else if (widget.post.type == PostType.video &&
+        widget.post.mediaPath != null &&
+        widget.post.mediaPath!.isNotEmpty) {
       contentWidget = Row(
         children: [
           Expanded(
             child: SizedBox(
               height: 240,
-              child: _VideoPlayerWidget(videoPath: post.mediaPath!),
+              child: _VideoPlayerWidget(videoPath: widget.post.mediaPath!),
             ),
           ),
         ],
       );
-    } else if ((post.type == null || post.type == PostType.text) && post.content.isNotEmpty) {
+    } else if ((widget.post.type == null ||
+            widget.post.type == PostType.text) &&
+        widget.post.content.isNotEmpty) {
       contentWidget = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(16),
         child: Text(
-          post.content,
-          style: const TextStyle(fontSize: 16),
+          widget.post.content,
+          style: const TextStyle(
+            fontSize: 16,
+            height: 1.5,
+            letterSpacing: -0.3,
+          ),
+          maxLines: 5,
+          overflow: TextOverflow.ellipsis,
         ),
       );
     } else {
@@ -71,97 +132,168 @@ class PostCard extends StatelessWidget {
       contentWidget = const SizedBox(height: 8);
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: Colors.black,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[800]!, width: 1),
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User info
-            Row(
+    return MouseRegion(
+      onEnter: (_) => _handleHover(true),
+      onExit: (_) => _handleHover(false),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Card(
+          margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+            side: BorderSide(
+              color: _isHovered ? Colors.red : Colors.black,
+              width: 3,
+            ),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey[800],
-                  radius: 20,
-                  child: Text(
-                    post.avatarText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                // User info
+                Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _isHovered ? Colors.red : Colors.black,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.transparent,
+                        child: Text(
+                          widget.post.avatarText,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '@${post.username}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 1),
-                      borderRadius: BorderRadius.circular(8),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '@${widget.post.username}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              letterSpacing: -0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              border: Border.all(
+                                color: _isHovered ? Colors.red : Colors.black,
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              'TRUTH',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(Icons.share, size: 16),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Content
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _isHovered ? Colors.red : Colors.black,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  onPressed: () {},
+                  child: contentWidget,
+                ),
+                // Post actions
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _isHovered ? Colors.red : Colors.black,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            widget.isLiked
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: widget.isLiked ? Colors.red : Colors.black,
+                            size: 20,
+                          ),
+                          onPressed: widget.onLike,
+                          padding: const EdgeInsets.all(8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.post.likes.toString(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _isHovered ? Colors.red : Colors.black,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                          onPressed: widget.onComment,
+                          padding: const EdgeInsets.all(8),
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.post.comments.toString(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            contentWidget,
-            // Post actions
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: isLiked
-                        ? const Icon(Icons.favorite, color: Colors.red)
-                        : const Icon(Icons.favorite_border),
-                    onPressed: onLike,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    post.likes.toString(),
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  IconButton(
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    onPressed: onComment,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    post.comments.toString(),
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -179,6 +311,7 @@ class _VideoPlayerWidget extends StatefulWidget {
 class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
   late VideoPlayerController _controller;
   bool _initialized = false;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -206,37 +339,73 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     return _initialized
-        ? AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                VideoPlayer(_controller),
-                VideoProgressIndicator(_controller, allowScrubbing: true),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: FloatingActionButton(
-                    mini: true,
-                    backgroundColor: Colors.black.withOpacity(0.6),
-                    onPressed: () {
-                      setState(() {
-                        _controller.value.isPlaying ? _controller.pause() : _controller.play();
-                      });
-                    },
-                    child: Icon(
-                      _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
+        ? MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+              if (_isHovered)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          _controller.value.isPlaying
+                              ? Icons.pause
+                              : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _controller.value.isPlaying
+                                ? _controller.pause()
+                                : _controller.play();
+                          });
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          )
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 4,
+                  color: Colors.black,
+                  child: VideoProgressIndicator(
+                    _controller,
+                    allowScrubbing: true,
+                    colors: VideoProgressColors(
+                      playedColor: Colors.red,
+                      bufferedColor: Colors.grey[300]!,
+                      backgroundColor: Colors.grey[200]!,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
         : Container(
-            height: 240,
-            color: Colors.black,
-            child: const Center(child: CircularProgressIndicator()),
-          );
+          height: 240,
+          color: Colors.grey[200],
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+            ),
+          ),
+        );
   }
 }

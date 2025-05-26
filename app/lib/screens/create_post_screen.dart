@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import 'dart:io';
+import '../widgets/brutalist_components.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -37,19 +38,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     try {
       print('Encrypting video...');
-      final encryptedFile = await _supabaseService.encryptVideo(_videoFile!, _postController.text);
-      print('Encrypted file at: \\${encryptedFile.path}');
+      final encryptedFile = await _supabaseService.encryptVideo(
+        _videoFile!,
+        _postController.text,
+      );
+      print('Encrypted file at: ${encryptedFile.path}');
 
       print('Uploading to Supabase...');
       final videoUrl = await _supabaseService.uploadVideo(
         encryptedFile.path,
         '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
       );
-      print('Uploaded video URL: \\${videoUrl}');
+      print('Uploaded video URL: ${videoUrl}');
 
       print('Creating post in Supabase...');
       await _supabaseService.createPost(
-        walletAddress: 'current_user_wallet', // TODO: Get from auth state
+        walletAddress: 'current_user_wallet',
         videoUrl: videoUrl,
         encryptedContent: _postController.text,
       );
@@ -63,9 +67,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         setState(() {
           _videoFile = null;
         });
+        // Navigate to feed screen
+        Navigator.pushReplacementNamed(context, '/feed');
       }
     } catch (e) {
-      print('Error in createPost: \\${e.toString()}');
+      print('Error in createPost: ${e.toString()}');
       setState(() {
         _error = 'Failed to create post. Please try again.';
       });
@@ -87,150 +93,272 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Post'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.black),
+        ),
+
+        centerTitle: true,
+        title: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
+          child: const Text(
+            'Create Post',
+            style: TextStyle(
+              color: Color(0xFF004AAD),
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
         actions: [
-          TextButton(
-            onPressed: _isUploading ? null : _createPost,
-            child: _isUploading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF004AAD),
-                    ),
-                  )
-                : const Text(
-                    'POST',
-                    style: TextStyle(
-                      color: Color(0xFF004AAD),
-                      fontWeight: FontWeight.bold,
-                    ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _isUploading ? null : _createPost,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
                   ),
+                  decoration: BoxDecoration(
+                    color:
+                        _isUploading
+                            ? Colors.grey.shade200
+                            : const Color(0xFF004AAD),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child:
+                      _isUploading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Post',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // User info
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey[800],
-                  radius: 20,
-                  child: const Text(
-                    'T',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  '@username',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Post content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _postController,
-                    maxLines: null,
-                    decoration: const InputDecoration(
-                      hintText: 'Share your deep truth...',
-                      border: InputBorder.none,
-                    ),
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  if (_videoFile != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(8),
+          Column(
+            children: [
+              // User info
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    BrutalistContainer(
+                      width: 40,
+                      height: 40,
+                      padding: const EdgeInsets.all(8),
+                      child: const Center(
+                        child: Text(
+                          'T',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                       ),
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: Icon(
-                              Icons.videocam,
-                              size: 48,
-                              color: Colors.grey[700],
-                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '@username',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Post content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      BrutalistTextField(
+                        controller: _postController,
+                        hintText: 'Share your deep truth...',
+                      ),
+                      if (_videoFile != null) ...[
+                        const SizedBox(height: 16),
+                        BrutalistContainer(
+                          height: 200,
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Icon(
+                                  Icons.videocam,
+                                  size: 48,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: BrutalistIconButton(
+                                  icon: Icons.close,
+                                  onPressed: () {
+                                    setState(() {
+                                      _videoFile = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () {
-                                setState(() {
-                                  _videoFile = null;
-                                });
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BrutalistContainer(
+                    backgroundColor: Colors.red.shade50,
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+              // Media options
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.black, width: 1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BrutalistButton(
+                      onPressed:
+                          _isUploading
+                              ? null
+                              : () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/camera',
+                                  arguments: _handleVideoRecorded,
+                                );
                               },
+                      backgroundColor: const Color(0xFF004AAD),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(width: 16),
+                          const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            _videoFile == null
+                                ? 'Record Video'
+                                : 'Change Video',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              letterSpacing: -0.5,
                             ),
                           ),
+                          const SizedBox(width: 16),
                         ],
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-          ),
-          
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          
-          // Media options
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              border: Border(
-                top: BorderSide(color: Colors.grey[800]!, width: 0.5),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.camera_alt, color: Color(0xFF004AAD)),
-                  onPressed: _isUploading
-                      ? null
-                      : () {
-                          Navigator.pushNamed(
-                            context,
-                            '/camera',
-                            arguments: _handleVideoRecorded,
-                          );
-                        },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (_isUploading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: BrutalistContainer(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF004AAD),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Creating your post...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
