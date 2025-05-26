@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
 import '../services/decrypt_service.dart';
 import '../widgets/brutalist_components.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DecryptScreen extends StatefulWidget {
   const DecryptScreen({super.key});
@@ -301,9 +302,27 @@ class _DecryptScreenState extends State<DecryptScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      _decryptedMessage!,
-                      style: const TextStyle(fontSize: 16, height: 1.5),
+                    BrutalistContainer(
+                      backgroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      child: GestureDetector(
+                        onTap: () async {
+                          final url = Uri.parse(_decryptedMessage!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Text(
+                          _decryptedMessage!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            height: 1.5,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
