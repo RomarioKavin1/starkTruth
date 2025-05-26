@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/brutalist_components.dart';
+import 'package:video_player/video_player.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   List<Map<String, dynamic>> _savedVideos = [];
   bool _isLoading = true;
   String? _error;
+  VideoPlayerController? _videoController;
+  bool _isVideoPlaying = false;
 
   @override
   void initState() {
@@ -59,9 +62,65 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  Future<void> _playVideo(String videoUrl) async {
+    if (_videoController != null) {
+      await _videoController!.dispose();
+    }
+
+    _videoController = VideoPlayerController.network(videoUrl);
+    await _videoController!.initialize();
+    await _videoController!.play();
+    setState(() {
+      _isVideoPlaying = true;
+    });
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder:
+            (context) => Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(16),
+              child: Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: _videoController!.value.aspectRatio,
+                    child: VideoPlayer(_videoController!),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: BrutalistButton(
+                      onPressed: () {
+                        _videoController?.pause();
+                        _videoController?.dispose();
+                        Navigator.pop(context);
+                      },
+                      backgroundColor: Colors.black.withOpacity(0.5),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+      ).then((_) {
+        _videoController?.pause();
+        _videoController?.dispose();
+        setState(() {
+          _isVideoPlaying = false;
+        });
+      });
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
@@ -125,7 +184,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   height: 48,
                   padding: const EdgeInsets.all(12),
                   child: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF004AAD),
+                    ),
+                    strokeWidth: 3,
                   ),
                 ),
               )
@@ -133,28 +195,42 @@ class _ProfileScreenState extends State<ProfileScreen>
               ? Center(
                 child: BrutalistContainer(
                   backgroundColor: Colors.red.shade50,
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red),
-                      const SizedBox(height: 8),
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 32,
+                      ),
+                      const SizedBox(height: 16),
                       Text(
                         _error!,
                         style: const TextStyle(
                           color: Colors.red,
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       BrutalistButton(
                         onPressed: _loadProfile,
-                        child: const Text(
-                          'Retry',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        backgroundColor: Colors.red.shade100,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text(
+                              'Retry',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -163,12 +239,12 @@ class _ProfileScreenState extends State<ProfileScreen>
               )
               : Column(
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   // Profile avatar
                   BrutalistContainer(
-                    width: 120,
-                    height: 120,
-                    padding: const EdgeInsets.all(16),
+                    width: 140,
+                    height: 140,
+                    padding: const EdgeInsets.all(24),
                     child: Center(
                       child: Text(
                         (_profile?['username'] ??
@@ -176,53 +252,76 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 '?')[0]
                             .toUpperCase(),
                         style: const TextStyle(
-                          fontSize: 48,
+                          fontSize: 64,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -1,
+                          color: Color(0xFF004AAD),
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Username
-                  Text(
-                    _profile?['username'] ?? 'Unknown',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Bio
-                  if (_profile?['bio'] != null && _profile!['bio'].isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        _profile!['bio'],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  // Wallet address
-                  BrutalistContainer(
-                    backgroundColor: Colors.grey.shade50,
-                    child: Text(
-                      _profile?['wallet_address'] ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Username
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFF004AAD), width: 3),
+                      ),
+                    ),
+                    child: Text(
+                      _profile?['username'] ?? 'Unknown',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Bio
+                  if (_profile?['bio'] != null && _profile!['bio'].isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: BrutalistContainer(
+                        backgroundColor: Colors.grey.shade50,
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          _profile!['bio'],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                  // Wallet address
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: BrutalistContainer(
+                      backgroundColor: Colors.grey.shade50,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Text(
+                        _profile?['wallet_address'] ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: -0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                   // Tab bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: BrutalistContainer(
                       padding: const EdgeInsets.all(4),
                       child: TabBar(
@@ -249,8 +348,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.grid_on, size: 20),
-                                SizedBox(width: 8),
+                                Icon(Icons.grid_on, size: 24),
+                                SizedBox(width: 12),
                                 Text('Videos'),
                               ],
                             ),
@@ -259,8 +358,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.bookmark, size: 20),
-                                SizedBox(width: 8),
+                                Icon(Icons.bookmark, size: 24),
+                                SizedBox(width: 12),
                                 Text('Saved'),
                               ],
                             ),
@@ -269,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   // Tab content
                   Expanded(
                     child: TabBarView(
@@ -280,17 +379,53 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ? Center(
                               child: BrutalistContainer(
                                 backgroundColor: Colors.grey.shade50,
-                                child: const Text(
-                                  'No videos yet',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.videocam_off,
+                                      size: 48,
+                                      color: Colors.black54,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'No videos yet',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    BrutalistButton(
+                                      onPressed: () {},
+                                      backgroundColor: const Color(0xFF004AAD),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.add_a_photo,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Record Video',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             )
                             : GridView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(24),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
@@ -300,41 +435,51 @@ class _ProfileScreenState extends State<ProfileScreen>
                               itemCount: _videos.length,
                               itemBuilder: (context, index) {
                                 final video = _videos[index];
-                                return BrutalistContainer(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Stack(
-                                    children: [
-                                      const Center(
-                                        child: Icon(
-                                          Icons.play_circle_outline,
-                                          size: 32,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${video['likes'] ?? 0}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                return GestureDetector(
+                                  onTap: () => _playVideo(video['video_url']),
+                                  child: BrutalistContainer(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Stack(
+                                      children: [
+                                        const Center(
+                                          child: Icon(
+                                            Icons.play_circle_outline,
+                                            size: 40,
+                                            color: Color(0xFF004AAD),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: BrutalistContainer(
+                                            backgroundColor: Colors.black,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.favorite,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${video['likes'] ?? 0}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               },
@@ -344,17 +489,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ? Center(
                               child: BrutalistContainer(
                                 backgroundColor: Colors.grey.shade50,
-                                child: const Text(
-                                  'No saved videos',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.bookmark_border,
+                                      size: 48,
+                                      color: Colors.black54,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'No saved videos',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             )
                             : GridView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(24),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
@@ -364,38 +521,51 @@ class _ProfileScreenState extends State<ProfileScreen>
                               itemCount: _savedVideos.length,
                               itemBuilder: (context, index) {
                                 final video = _savedVideos[index];
-                                return BrutalistContainer(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Stack(
-                                    children: [
-                                      const Center(
-                                        child: Icon(Icons.bookmark, size: 32),
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
+                                return GestureDetector(
+                                  onTap: () => _playVideo(video['video_url']),
+                                  child: BrutalistContainer(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Stack(
+                                      children: [
+                                        const Center(
+                                          child: Icon(
+                                            Icons.bookmark,
+                                            size: 40,
+                                            color: Color(0xFF004AAD),
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
+                                        ),
+                                        Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: BrutalistContainer(
+                                            backgroundColor: Colors.black,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
                                             ),
-                                          ),
-                                          child: Text(
-                                            '${video['likes'] ?? 0}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.favorite,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${video['likes'] ?? 0}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 );
                               },
