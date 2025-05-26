@@ -1,9 +1,13 @@
+# SecretManager Contract
+
+This repository contains the Cairo 2 implementation of the SecretManager contract
+
 ## Overview
 
 The SecretManager contract allows users to create and manage secrets in a two-step process:
 
-1. **Pre-Secret Creation**: Creates a secret hash linking a creator and a user
-2. **Post Details Association**: Associates post metadata (title, description, etc.) with the secret
+1. **Pre-Secret Creation**: Creates a simple sequential secret ID linking a creator and a user
+2. **Post Details Association**: Associates post metadata (post_id, duration) with the secret
 3. **Secret Verification**: Allows verification and retrieval of secret details
 
 ## Contract Structure
@@ -14,9 +18,7 @@ The SecretManager contract allows users to create and manage secrets in a two-st
 struct SecretData {
     creator: ContractAddress,      // Address that created the secret
     user: ContractAddress,         // Address of the intended user
-    post_id: ByteArray,           // Associated post ID
-    title: ByteArray,             // Secret title
-    description: ByteArray,       // Secret description
+    post_id: u64,                 // Associated post ID (numeric)
     duration: u256,               // Duration in seconds
     is_complete: bool,            // Whether details are associated
 }
@@ -24,33 +26,36 @@ struct SecretData {
 
 ### Main Functions
 
-#### `create_pre_secret(user: ContractAddress) -> felt252`
+#### `create_pre_secret(user: ContractAddress) -> u64`
 
 - Creates a pre-secret for a specific user
-- Returns a unique secret hash generated using Pedersen hash
+- Returns a pseudo-random 64-bit secret ID (based on caller, user, timestamp, and counter)
 - Emits `SecretCreated` event
 
-#### `associate_post_details(secret_hash, post_id, title, description, duration)`
+#### `associate_post_details(secret_id: u64, post_id: u64, duration: u256)`
 
 - Associates post details with an existing secret
 - Only the original creator can call this function
 - Can only be called once per secret
 - Emits `PostDetailsAssociated` event
 
-#### `verify_secret(secret_hash) -> (ByteArray, ByteArray)`
+#### `verify_secret(secret_id: u64) -> u64`
 
-- Verifies a secret and returns the title and post_id
+- Verifies a secret and returns the post_id
 - Only works for completed secrets
-- Returns tuple of (title, post_id)
+- Returns the associated post_id
 
-## Events
+#### `get_next_secret_id() -> u64`
+
+- Returns the current secret counter (number of secrets created)
+- Useful for tracking how many secrets have been created
 
 ### SecretCreated
 
 Emitted when a pre-secret is created:
 
 ```cairo
-#[key] secret_hash: felt252
+#[key] secret_id: u64
 #[key] creator: ContractAddress
 #[key] user: ContractAddress
 ```
@@ -60,17 +65,20 @@ Emitted when a pre-secret is created:
 Emitted when post details are associated:
 
 ```cairo
-#[key] secret_hash: felt252
-post_id: ByteArray
-title: ByteArray
+#[key] secret_id: u64
+post_id: u64
 ```
 
-### class hash
+## Deployment Information
 
-0x01fd652d2a5af8bed4ea558eadb45cfbf6510362a355549251f94952de00566c
+### Class Hash
 
-### deployment:
+0x06c36c4e464c60239929d67b02169342526e9272c1bb8fd01eb8d1ee585f86eb
 
-0x027d49de9a9f841cdd36bba64b68736d170bf374b9e8a1c22c826406a17d20fa
+### Contract Address (Sepolia)
 
-https://sepolia.starkscan.co/contract/0x027d49de9a9f841cdd36bba64b68736d170bf374b9e8a1c22c826406a17d20fa#read-write-contract-sub-write
+0x01cac254acbcd5c2a68c3a5aa04b58466d6cb0e578a431c0f4a68c2790dff610
+
+### Block Explorer
+
+https://sepolia.starkscan.co/contract/0x01cac254acbcd5c2a68c3a5aa04b58466d6cb0e578a431c0f4a68c2790dff610
