@@ -93,47 +93,59 @@ class _DecryptScreenState extends State<DecryptScreen> {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false, // Remove default back button
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: Colors.black),
         ),
-        leading: Container(
-          margin: const EdgeInsets.only(left: 16),
-          child: Row(
+        title: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const Text(
-                'Stark',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
+              // Centered title
+              const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Decrypt',
+                  style: TextStyle(
+                    color: Color(0xFF004AAD),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
-              const Text(
-                'Truth',
-                style: TextStyle(
-                  color: Color(0xFF004AAD),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
+              // Left-aligned logo
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Stark',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'Truth',
+                      style: TextStyle(
+                        color: Color(0xFF004AAD),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        centerTitle: true,
-        title: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-          child: const Text(
-            'Decrypt',
-            style: TextStyle(
-              color: Color(0xFF004AAD),
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

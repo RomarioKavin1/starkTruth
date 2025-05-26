@@ -102,32 +102,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: Colors.black),
         ),
-        leading: Container(
-          margin: const EdgeInsets.only(left: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Stark',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  letterSpacing: -1,
-                ),
-              ),
-              const Text(
-                'Truth',
-                style: TextStyle(
-                  color: Color(0xFF004AAD),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  letterSpacing: -1,
-                ),
-              ),
-            ],
-          ),
-        ),
+
         centerTitle: true,
         title: Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
