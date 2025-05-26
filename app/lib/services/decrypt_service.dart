@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 
 class DecryptService {
   final String _serverUrl;
 
-  DecryptService({String? serverUrl})
-    : _serverUrl = serverUrl ?? 'http://192.168.1.4:5000';
+  DecryptService({String? serverUrl}) : _serverUrl = dotenv.env['SERVER_URL']!;
 
   Future<String> decryptVideo(File videoFile) async {
     try {

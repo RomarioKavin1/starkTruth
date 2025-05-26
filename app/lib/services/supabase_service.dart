@@ -15,10 +15,11 @@ class SupabaseService {
     await dotenv.load();
     await Supabase.initialize(
       url: "https://qweqeisblbwskwxhlstg.supabase.co",
-      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3ZXFlaXNibGJ3c2t3eGhsc3RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxODY1NjIsImV4cCI6MjA2Mzc2MjU2Mn0.3WrxN88VMb4Y41kd8ZOWY6SsZAEM5c-LYqJ51XmTRY4",
+      anonKey:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3ZXFlaXNibGJ3c2t3eGhsc3RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxODY1NjIsImV4cCI6MjA2Mzc2MjU2Mn0.3WrxN88VMb4Y41kd8ZOWY6SsZAEM5c-LYqJ51XmTRY4",
     );
-    var anon=dotenv.env['SUPABASE_ANON_KEY']??"";
-    print(dotenv.env['SUPABASE_URL']  );
+    var anon = dotenv.env['SUPABASE_ANON_KEY'] ?? "";
+    print(dotenv.env['SUPABASE_URL']);
     print("key  ");
     print(anon);
     client = Supabase.instance.client;
@@ -27,11 +28,12 @@ class SupabaseService {
   // User Profile Operations
   Future<Map<String, dynamic>?> getUserProfile(String walletAddress) async {
     try {
-      final response = await client
-          .from('profiles')
-          .select()
-          .eq('wallet_address', walletAddress)
-          .single();
+      final response =
+          await client
+              .from('profiles')
+              .select()
+              .eq('wallet_address', walletAddress)
+              .single();
       return response;
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
@@ -42,7 +44,11 @@ class SupabaseService {
     }
   }
 
-  Future<void> createUserProfile(String walletAddress, String username, String bio) async {
+  Future<void> createUserProfile(
+    String walletAddress,
+    String username,
+    String bio,
+  ) async {
     await client.from('profiles').insert({
       'wallet_address': walletAddress,
       'username': username,
@@ -100,16 +106,25 @@ class SupabaseService {
     final bytes = await file.readAsBytes();
     await client.storage
         .from('videos')
-        .uploadBinary(fileName, bytes, fileOptions: const FileOptions(upsert: true));
+        .uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
     return client.storage.from('videos').getPublicUrl(fileName);
   }
 
   // Encrypt video using external API
   Future<File> encryptVideo(File videoFile, String description) async {
-    final uri = Uri.parse('http://10.0.2.2:5000/encrypt'); // TODO: Replace with your actual API URL
-    final request = http.MultipartRequest('POST', uri)
-      ..files.add(await http.MultipartFile.fromPath('video', videoFile.path))
-      ..fields['text'] = description;
+    final uri = Uri.parse(
+      dotenv.env['SERVER_URL']! + '/encrypt',
+    ); // TODO: Replace with your actual API URL
+    final request =
+        http.MultipartRequest('POST', uri)
+          ..files.add(
+            await http.MultipartFile.fromPath('video', videoFile.path),
+          )
+          ..fields['text'] = description;
 
     final response = await request.send();
 
@@ -133,11 +148,8 @@ class SupabaseService {
   // Like a post (by id)
   Future<void> likePost(String postId) async {
     // Get current likes
-    final response = await client
-        .from('posts')
-        .select('likes')
-        .eq('id', postId)
-        .single();
+    final response =
+        await client.from('posts').select('likes').eq('id', postId).single();
     final currentLikes = (response['likes'] ?? 0) as int;
     await client
         .from('posts')
@@ -146,7 +158,11 @@ class SupabaseService {
   }
 
   // Add a comment to a post
-  Future<void> addComment(String postId, String comment, String walletAddress) async {
+  Future<void> addComment(
+    String postId,
+    String comment,
+    String walletAddress,
+  ) async {
     await client.from('comments').insert({
       'post_id': postId,
       'wallet_address': walletAddress,
@@ -154,11 +170,8 @@ class SupabaseService {
       'created_at': DateTime.now().toIso8601String(),
     });
     // Get current comments count
-    final response = await client
-        .from('posts')
-        .select('comments')
-        .eq('id', postId)
-        .single();
+    final response =
+        await client.from('posts').select('comments').eq('id', postId).single();
     final currentComments = (response['comments'] ?? 0) as int;
     await client
         .from('posts')
@@ -175,4 +188,4 @@ class SupabaseService {
         .order('created_at', ascending: true);
     return List<Map<String, dynamic>>.from(response);
   }
-} 
+}

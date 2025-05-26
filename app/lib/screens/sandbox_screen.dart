@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../services/steno_service.dart';
 import '../services/decrypt_service.dart';
 import '../widgets/brutalist_components.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SandboxScreen extends StatefulWidget {
   const SandboxScreen({super.key});
@@ -27,7 +28,7 @@ class _SandboxScreenState extends State<SandboxScreen> {
   File? _encryptedVideo;
   String? _decryptedMessage;
   final _decryptService = DecryptService();
-  final _apiUrl = 'http://192.168.1.4:5000/encrypt';
+  final _apiUrl = dotenv.env['SERVER_URL']! + '/encrypt';
 
   @override
   void initState() {

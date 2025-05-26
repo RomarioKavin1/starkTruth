@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:camera/camera.dart';
 import 'dart:io';
@@ -176,7 +177,7 @@ class _CameraScreenState extends State<CameraScreen> {
       final secretHash = await createPreSecret(walletAddress);
       print(secretHash);
       // 3. Encrypt video with secretHash
-      const apiUrl = 'http://10.0.2.2:5000/encrypt';
+      const apiUrl = dotenv.env['SERVER_URL']! + '/encrypt';
       final result = await sendVideoForEncryption(
         videoFile: videoFile,
         apiUrl: apiUrl,
