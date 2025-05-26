@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/feed_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/create_post_screen.dart';
@@ -10,29 +9,20 @@ import 'screens/camera_screen.dart';
 import 'screens/messaging_screen.dart';
 import 'services/supabase_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'screens/storage_test_screen.dart';
 import 'screens/sandbox_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Supabase
-  await dotenv.load();
   await SupabaseService().initialize();
-  
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
-  );
-  await dotenv.load(fileName: ".env");
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_PROJECT_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -46,23 +36,33 @@ class MyApp extends StatelessWidget {
       title: 'TruthCast',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
         primaryColor: const Color(0xFF004AAD),
-        colorScheme: ColorScheme.dark(
+        colorScheme: ColorScheme.light(
           primary: const Color(0xFF004AAD),
           secondary: const Color(0xFF004AAD),
-          background: Colors.black,
-          surface: const Color(0xFF121212),
+          background: Colors.white,
+          surface: Colors.grey[100]!,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
+          backgroundColor: Colors.white,
           elevation: 0,
+          iconTheme: IconThemeData(color: Color(0xFF004AAD)),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF004AAD),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         textTheme: const TextTheme(
-          titleLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-          bodyLarge: TextStyle(fontSize: 16),
-          bodyMedium: TextStyle(fontSize: 14),
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: Color(0xFF004AAD),
+          ),
+          bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
+          bodyMedium: TextStyle(fontSize: 14, color: Colors.black87),
         ),
         useMaterial3: true,
       ),
@@ -263,44 +263,102 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           });
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black,
-        selectedItemColor: Color(0xFF004AAD),
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Feed',
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: const Color.fromARGB(255, 0, 0, 0),
+            width: 3,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            activeIcon: Icon(Icons.add_circle),
-            label: 'Create',
+          boxShadow: [
+            BoxShadow(
+              color: const Color.fromARGB(255, 0, 0, 0),
+              blurRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.home_outlined, Icons.home, 'Feed'),
+                _buildNavItem(1, Icons.lock_outline, Icons.lock, 'Decrypt'),
+                _buildNavItem(
+                  2,
+                  Icons.add_circle_outline,
+                  Icons.add_circle,
+                  'Create',
+                ),
+                _buildNavItem(
+                  3,
+                  Icons.science_outlined,
+                  Icons.science,
+                  'Sandbox',
+                ),
+                _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile'),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lock_outline),
-            activeIcon: Icon(Icons.lock),
-            label: 'Decrypt',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Sandbox',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: isSelected ? 12 : 8,
+        ),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? const Color(0xFF004AAD).withOpacity(0.1)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border:
+              isSelected
+                  ? Border.all(color: const Color(0xFF004AAD), width: 2)
+                  : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? const Color(0xFF004AAD) : Colors.grey[600],
+              size: 28,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF004AAD),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
