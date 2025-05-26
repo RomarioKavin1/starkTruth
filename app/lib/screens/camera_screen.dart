@@ -122,16 +122,23 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   String stringToFeltHexList(String input) {
-  // Split string into 31-byte chunks (Felt max for short string)
-  final bytes = input.codeUnits;
-  List<String> felts = [];
-  for (int i = 0; i < bytes.length; i += 31) {
-    final chunk = bytes.sublist(i, i + 31 > bytes.length ? bytes.length : i + 31);
-    final value = BigInt.parse(chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join(), radix: 16);
-    felts.add('0x${value.toRadixString(16)}');
+    // Split string into 31-byte chunks (Felt max for short string)
+    final bytes = input.codeUnits;
+    List<String> felts = [];
+    for (int i = 0; i < bytes.length; i += 31) {
+      final chunk = bytes.sublist(
+        i,
+        i + 31 > bytes.length ? bytes.length : i + 31,
+      );
+      final value = BigInt.parse(
+        chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        radix: 16,
+      );
+      felts.add('0x${value.toRadixString(16)}');
+    }
+    return felts.join('');
   }
-  return felts.join('');
-}
+
   Future<void> _uploadVideoWithText(File videoFile, String text) async {
     setState(() => _isUploading = true);
     try {
@@ -143,17 +150,24 @@ class _CameraScreenState extends State<CameraScreen> {
         if (!mounted) return;
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: Color(0xFF004AAD),
-            title: const Text('Error', style: TextStyle(color: Colors.red)),
-            content: const Text('No wallet address found. Please log in again.', style: TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-                onPressed: () => Navigator.of(ctx).pop(),
+          builder:
+              (ctx) => AlertDialog(
+                backgroundColor: Color(0xFF004AAD),
+                title: const Text('Error', style: TextStyle(color: Colors.red)),
+                content: const Text(
+                  'No wallet address found. Please log in again.',
+                  style: TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
         return;
       }
@@ -223,7 +237,7 @@ class _CameraScreenState extends State<CameraScreen> {
         if (profile == null) {
           await supabaseService.createUserProfile(walletAddress, '', '');
         }
-        final video_filename=DateTime.now().millisecondsSinceEpoch.toString();
+        final video_filename = DateTime.now().millisecondsSinceEpoch.toString();
         final videoUrl = await supabaseService.uploadVideo(
           encryptedFile.path,
           '${video_filename}.mp4',
@@ -346,47 +360,55 @@ class _CameraScreenState extends State<CameraScreen> {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false, // Remove default back button
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: Colors.black),
         ),
-        leading: Container(
-          margin: const EdgeInsets.only(left: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+        title: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const Text(
-                'Stark',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  letterSpacing: -1,
+              // Centered title
+              const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Record',
+                  style: TextStyle(
+                    color: Color(0xFF004AAD),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
-              const Text(
-                'Truth',
-                style: TextStyle(
-                  color: Color(0xFF004AAD),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  letterSpacing: -1,
+              // Left-aligned logo
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Stark',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'Truth',
+                      style: TextStyle(
+                        color: Color(0xFF004AAD),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-        ),
-        centerTitle: true,
-        title: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-          child: const Text(
-            'Record',
-            style: TextStyle(
-              color: Color(0xFF004AAD),
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: -0.5,
-            ),
           ),
         ),
       ),
