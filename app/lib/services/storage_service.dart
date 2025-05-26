@@ -21,7 +21,6 @@ class StorageService {
   }) async {
     try {
       final fileName = path.basename(file.path);
-      final fileExt = path.extension(fileName);
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final uniqueFileName = '${timestamp}_$fileName';
 

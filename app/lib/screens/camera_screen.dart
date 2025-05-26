@@ -10,6 +10,7 @@ import '../services/steno_service.dart';
 import '../widgets/loader.dart';
 import '../services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/starknet_service.dart';
 
 class CameraScreen extends StatefulWidget {
   final void Function(File videoFile)? onVideoRecorded;
@@ -172,22 +173,55 @@ class _CameraScreenState extends State<CameraScreen> {
       },
     );
   }
-
+  String stringToFeltHexList(String input) {
+  // Split string into 31-byte chunks (Felt max for short string)
+  final bytes = input.codeUnits;
+  List<String> felts = [];
+  for (int i = 0; i < bytes.length; i += 31) {
+    final chunk = bytes.sublist(i, i + 31 > bytes.length ? bytes.length : i + 31);
+    final value = BigInt.parse(chunk.map((b) => b.toRadixString(16).padLeft(2, '0')).join(), radix: 16);
+    felts.add('0x${value.toRadixString(16)}');
+  }
+  return felts.join('');
+}
   Future<void> _uploadVideoWithText(File videoFile, String text) async {
     setState(() => _isUploading = true);
     try {
-      // Encrypt video via API
+      // 1. Get wallet address
+      final prefs = await SharedPreferences.getInstance();
+      final walletAddress = prefs.getString('wallet_address') ?? '';
+      if (walletAddress.isEmpty) {
+        setState(() => _isUploading = false);
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Color(0xFF004AAD),
+            title: const Text('Error', style: TextStyle(color: Colors.red)),
+            content: const Text('No wallet address found. Please log in again.', style: TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                child: const Text('OK', style: TextStyle(color: Colors.white)),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      // 2. Call create_pre_secret on StarkNet contract
+      final secretHash = await createPreSecret(walletAddress);
+      // 3. Encrypt video with secretHash
       const apiUrl = 'http://10.0.2.2:5000/encrypt';
       final result = await sendVideoForEncryption(
         videoFile: videoFile,
-        text: text,
         apiUrl: apiUrl,
+        text: secretHash, // Pass the secret hash to your encryption API
       );
-      // Save the received video to storage
+      // 4. Save the received video to storage
       if (result['mp4'] != null && result['mp4_filename'] != null) {
         final mp4Bytes = base64Decode(result['mp4']);
         final filename = result['mp4_filename'] as String;
-        // Save encrypted file locally (optional)
         String? savePath;
         if (Theme.of(context).platform == TargetPlatform.android) {
           final downloadsDir = await getExternalStorageDirectory();
@@ -195,37 +229,11 @@ class _CameraScreenState extends State<CameraScreen> {
             savePath = '${downloadsDir.path}/$filename';
           }
         }
-        savePath ??= (await getApplicationDocumentsDirectory()).path + '/$filename';
+        savePath ??= '${(await getApplicationDocumentsDirectory()).path}/$filename';
         final encryptedFile = File(savePath);
         await encryptedFile.writeAsBytes(mp4Bytes);
-
         // --- Upload to Supabase and create post ---
         final supabaseService = SupabaseService();
-        final prefs = await SharedPreferences.getInstance();
-        final walletAddress = prefs.getString('wallet_address') ?? '';
-        if (walletAddress.isEmpty) {
-          setState(() => _isUploading = false);
-          if (!mounted) return;
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              backgroundColor: Color(0xFF004AAD),
-              title: const Text('Error', style: TextStyle(color: Colors.red)),
-              content: const Text('No wallet address found. Please log in again.', style: TextStyle(color: Colors.white)),
-              actions: [
-                TextButton(
-                  child: const Text('OK', style: TextStyle(color: Colors.white)),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                ),
-              ],
-            ),
-          );
-          return;
-        }
-        // Ensure profile exists
-        final username = prefs.getString('username') ?? '';
-        final bio = prefs.getString('bio') ?? '';
-        await supabaseService.createUserProfile(walletAddress, username, bio);
         final videoUrl = await supabaseService.uploadVideo(
           encryptedFile.path,
           '${DateTime.now().millisecondsSinceEpoch}_encrypted.mp4',
@@ -235,8 +243,17 @@ class _CameraScreenState extends State<CameraScreen> {
           videoUrl: videoUrl,
           encryptedContent: text,
         );
-        // --- End upload/post creation ---
-
+        print(stringToFeltHexList(videoUrl));
+        print(secretHash);
+        print(stringToFeltHexList(secretHash));
+        // 5. Call associate_post_details on StarkNet contract
+        await associatePostDetails(
+          secretHash: secretHash,
+          postId: stringToFeltHexList(videoUrl),
+          title: stringToFeltHexList(' '), // You can customize this
+          description: stringToFeltHexList(" "),
+          duration: 0,
+        );
         setState(() => _isUploading = false);
         if (!mounted) return;
         showDialog(
@@ -274,6 +291,7 @@ class _CameraScreenState extends State<CameraScreen> {
     } catch (e) {
       setState(() => _isUploading = false);
       if (!mounted) return;
+      print(e);
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
