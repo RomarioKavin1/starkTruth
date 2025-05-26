@@ -42,11 +42,23 @@ class SupabaseService {
     }
   }
 
-  Future<void> createUserProfile(String walletAddress) async {
+  Future<void> createUserProfile(String walletAddress, String username, String bio) async {
     await client.from('profiles').insert({
       'wallet_address': walletAddress,
+      'username': username,
+      'bio': bio,
       'created_at': DateTime.now().toIso8601String(),
     });
+  }
+
+  // Get all posts by a user
+  Future<List<Map<String, dynamic>>> getUserPosts(String walletAddress) async {
+    final response = await client
+        .from('posts')
+        .select()
+        .eq('wallet_address', walletAddress)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
   }
 
   // Feed Operations

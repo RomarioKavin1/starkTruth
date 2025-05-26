@@ -100,7 +100,6 @@ class _DecryptScreenState extends State<DecryptScreen> {
         leading: Container(
           margin: const EdgeInsets.only(left: 16),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Stark',
@@ -108,7 +107,6 @@ class _DecryptScreenState extends State<DecryptScreen> {
                   color: Colors.black,
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
-                  letterSpacing: -1,
                 ),
               ),
               const Text(
@@ -117,7 +115,6 @@ class _DecryptScreenState extends State<DecryptScreen> {
                   color: Color(0xFF004AAD),
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
-                  letterSpacing: -1,
                 ),
               ),
             ],

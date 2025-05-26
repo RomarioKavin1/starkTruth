@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,8 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadProfile() async {
     try {
-      // TODO: Get wallet address from auth state
-      const walletAddress = 'current_user_wallet';
+      final prefs = await SharedPreferences.getInstance();
+      final walletAddress = prefs.getString('wallet_address') ?? '';
       final profile = await _supabaseService.getUserProfile(walletAddress);
       
       if (profile != null) {
@@ -35,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           _profile = profile;
           _isLoading = false;
         });
-        _loadVideos();
+        _loadVideos(walletAddress);
       }
     } catch (e) {
       setState(() {
@@ -45,11 +46,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
-  Future<void> _loadVideos() async {
+  Future<void> _loadVideos(String walletAddress) async {
     try {
-      // TODO: Get wallet address from auth state
-      const walletAddress = 'current_user_wallet';
-      final videos = await _supabaseService.getUserVideos(walletAddress);
+      final videos = await _supabaseService.getUserPosts(walletAddress);
       setState(() {
         _videos = videos;
       });
@@ -67,7 +66,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: Container(
             decoration: BoxDecoration(
@@ -93,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               TextSpan(
                 text: 'FILE',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
@@ -157,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         ),
                         child: Center(
                           child: Text(
-                            _profile?['wallet_address']?[2].toUpperCase() ?? '?',
+                            (_profile?['username'] ?? _profile?['wallet_address'] ?? '?')[0].toUpperCase(),
                             style: const TextStyle(
                               fontSize: 40,
                               fontWeight: FontWeight.bold,
@@ -166,13 +167,33 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Wallet address
+                    const SizedBox(height: 12),
+                    // Username
                     Text(
-                      _profile?['wallet_address'] ?? 'Unknown',
+                      _profile?['username'] ?? 'Unknown',
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Bio
+                    Text(
+                      _profile?['bio'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.black54,
                         fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    // Wallet address (small)
+                    Text(
+                      _profile?['wallet_address'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.black38,
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -180,14 +201,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 1),
+                        border: Border.all(color: Color(0xFF004AAD), width: 1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         indicatorColor: Color(0xFF004AAD),
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black38),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
                         indicator: BoxDecoration(
@@ -199,9 +220,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.grid_on),
+                                Icon(Icons.grid_on, color: Colors.black),
                                 SizedBox(width: 8),
-                                Text('Videos', style: TextStyle(color: Colors.white)),
+                                Text('Videos', style: TextStyle(color: Colors.black)),
                               ],
                             ),
                           ),
@@ -209,9 +230,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.bookmark),
+                                Icon(Icons.bookmark, color: Colors.black),
                                 SizedBox(width: 8),
-                                Text('Saved', style: TextStyle(color: Colors.white)),
+                                Text('Saved', style: TextStyle(color: Colors.black)),
                               ],
                             ),
                           ),

@@ -208,7 +208,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: Colors.white,
               border: Border(
                 top: BorderSide(color: Colors.grey[800]!, width: 0.5),
               ),

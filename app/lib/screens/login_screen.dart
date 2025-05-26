@@ -12,6 +12,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _walletController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _bioController = TextEditingController();
   bool _isLoading = false;
   String? _error;
   final _supabaseService = SupabaseService();
@@ -26,16 +28,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final walletAddress = _walletController.text.trim();
+      final username = _usernameController.text.trim();
+      final bio = _bioController.text.trim();
       final profile = await _supabaseService.getUserProfile(walletAddress);
       
       if (profile == null) {
         // Create new profile if user doesn't exist
-        await _supabaseService.createUserProfile(walletAddress);
+        await _supabaseService.createUserProfile(walletAddress, username, bio);
       }
 
-      // Store wallet address in SharedPreferences
+      // Store wallet address, username, and bio in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('wallet_address', walletAddress);
+      await prefs.setString('username', username);
+      await prefs.setString('bio', bio);
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/main');
@@ -56,6 +62,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _walletController.dispose();
+    _usernameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -100,6 +108,50 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       if (!value.startsWith('0x') || value.length < 42) {
                         return 'Please enter a valid wallet address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _usernameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your username',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(Icons.person, color: Color(0xFF004AAD)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a username';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _bioController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your bio',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(Icons.info, color: Color(0xFF004AAD)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a bio';
                       }
                       return null;
                     },
