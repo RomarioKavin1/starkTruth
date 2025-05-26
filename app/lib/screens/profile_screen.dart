@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../widgets/brutalist_components.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,7 +9,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _supabaseService = SupabaseService();
   Map<String, dynamic>? _profile;
@@ -26,10 +28,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadProfile() async {
     try {
-      // TODO: Get wallet address from auth state
       const walletAddress = 'current_user_wallet';
       final profile = await _supabaseService.getUserProfile(walletAddress);
-      
+
       if (profile != null) {
         setState(() {
           _profile = profile;
@@ -47,7 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadVideos() async {
     try {
-      // TODO: Get wallet address from auth state
       const walletAddress = 'current_user_wallet';
       final videos = await _supabaseService.getUserVideos(walletAddress);
       setState(() {
@@ -67,141 +67,163 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.all(4),
-            child: const Icon(Icons.arrow_back, size: 16),
-          ),
-          onPressed: () {},
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.black),
         ),
-        title: RichText(
-          text: const TextSpan(
+        leading: Container(
+          margin: const EdgeInsets.only(left: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextSpan(
-                text: 'PRO',
+              const Text(
+                'Stark',
                 style: TextStyle(
-                  color: Color(0xFF004AAD),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: -1,
                 ),
               ),
-              TextSpan(
-                text: 'FILE',
+              const Text(
+                'Truth',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  color: Color(0xFF004AAD),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: -1,
                 ),
               ),
             ],
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.settings, size: 16),
+        title: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
+          child: const Text(
+            'Profile',
+            style: TextStyle(
+              color: Color(0xFF004AAD),
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+              letterSpacing: -0.5,
             ),
-            onPressed: () {},
           ),
-          IconButton(
-            icon: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.share, size: 16),
-            ),
-            onPressed: () {},
-          ),
-        ],
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
+      body:
+          _isLoading
               ? Center(
+                child: BrutalistContainer(
+                  width: 48,
+                  height: 48,
+                  padding: const EdgeInsets.all(12),
+                  child: const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  ),
+                ),
+              )
+              : _error != null
+              ? Center(
+                child: BrutalistContainer(
+                  backgroundColor: Colors.red.shade50,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(height: 8),
+                      Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      BrutalistButton(
                         onPressed: _loadProfile,
-                        child: const Text('Retry'),
+                        child: const Text(
+                          'Retry',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                )
+                ),
+              )
               : Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Profile avatar
-                    Center(
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: Center(
-                          child: Text(
-                            _profile?['wallet_address']?[2].toUpperCase() ?? '?',
-                            style: const TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                children: [
+                  const SizedBox(height: 24),
+                  // Profile avatar
+                  BrutalistContainer(
+                    width: 120,
+                    height: 120,
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: Text(
+                        _profile?['wallet_address']?[2].toUpperCase() ?? '?',
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Wallet address
-                    Text(
+                  ),
+                  const SizedBox(height: 16),
+                  // Wallet address
+                  BrutalistContainer(
+                    backgroundColor: Colors.grey.shade50,
+                    child: Text(
                       _profile?['wallet_address'] ?? 'Unknown',
                       style: const TextStyle(
-                        color: Colors.white70,
                         fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Tab bar
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Tab bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: BrutalistContainer(
+                      padding: const EdgeInsets.all(4),
                       child: TabBar(
                         controller: _tabController,
-                        indicatorColor: Color(0xFF004AAD),
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: Colors.transparent,
-                        indicator: BoxDecoration(
-                          color: Color(0xFF004AAD),
-                          borderRadius: BorderRadius.circular(8),
+                        indicatorColor: Colors.transparent,
+                        labelColor: Colors.white,
+                        unselectedLabelColor: Colors.black,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: -0.5,
                         ),
-                        tabs: [
+                        unselectedLabelStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: -0.5,
+                        ),
+                        indicator: BoxDecoration(
+                          color: const Color(0xFF004AAD),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        tabs: const [
                           Tab(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.grid_on),
+                                Icon(Icons.grid_on, size: 20),
                                 SizedBox(width: 8),
-                                Text('Videos', style: TextStyle(color: Colors.white)),
+                                Text('Videos'),
                               ],
                             ),
                           ),
@@ -209,120 +231,152 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.bookmark),
+                                Icon(Icons.bookmark, size: 20),
                                 SizedBox(width: 8),
-                                Text('Saved', style: TextStyle(color: Colors.white)),
+                                Text('Saved'),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Tab content
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          // Videos tab
-                          _videos.isEmpty
-                              ? const Center(
-                                  child: Text(
-                                    'No videos yet',
-                                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 16),
+                  // Tab content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Videos tab
+                        _videos.isEmpty
+                            ? Center(
+                              child: BrutalistContainer(
+                                backgroundColor: Colors.grey.shade50,
+                                child: const Text(
+                                  'No videos yet',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                )
-                              : GridView.builder(
-                                  padding: const EdgeInsets.all(8),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                  ),
-                                  itemCount: _videos.length,
-                                  itemBuilder: (context, index) {
-                                    final video = _videos[index];
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF003377),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          Center(
-                                            child: Icon(
-                                              Icons.play_circle_outline,
-                                              color: Colors.white.withOpacity(0.8),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            bottom: 8,
-                                            right: 8,
-                                            child: Text(
-                                              '${video['likes'] ?? 0}',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
                                 ),
-                          // Saved tab
-                          _savedVideos.isEmpty
-                              ? const Center(
-                                  child: Text(
-                                    'No saved videos',
-                                    style: TextStyle(color: Colors.white70),
-                                  ),
-                                )
-                              : GridView.builder(
-                                  padding: const EdgeInsets.all(8),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              ),
+                            )
+                            : GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
                                   ),
-                                  itemCount: _savedVideos.length,
-                                  itemBuilder: (context, index) {
-                                    final video = _savedVideos[index];
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF003377),
-                                        borderRadius: BorderRadius.circular(8),
+                              itemCount: _videos.length,
+                              itemBuilder: (context, index) {
+                                final video = _videos[index];
+                                return BrutalistContainer(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Stack(
+                                    children: [
+                                      const Center(
+                                        child: Icon(
+                                          Icons.play_circle_outline,
+                                          size: 32,
+                                        ),
                                       ),
-                                      child: Stack(
-                                        children: [
-                                          Center(
-                                            child: Icon(
-                                              Icons.bookmark,
-                                              color: Colors.white.withOpacity(0.8),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
                                             ),
                                           ),
-                                          Positioned(
-                                            bottom: 8,
-                                            right: 8,
-                                            child: Text(
-                                              '${video['likes'] ?? 0}',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                              ),
+                                          child: Text(
+                                            '${video['likes'] ?? 0}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                        ],
+                                        ),
                                       ),
-                                    );
-                                  },
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                        // Saved tab
+                        _savedVideos.isEmpty
+                            ? Center(
+                              child: BrutalistContainer(
+                                backgroundColor: Colors.grey.shade50,
+                                child: const Text(
+                                  'No saved videos',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                        ],
-                      ),
+                              ),
+                            )
+                            : GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                  ),
+                              itemCount: _savedVideos.length,
+                              itemBuilder: (context, index) {
+                                final video = _savedVideos[index];
+                                return BrutalistContainer(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Stack(
+                                    children: [
+                                      const Center(
+                                        child: Icon(Icons.bookmark, size: 32),
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${video['likes'] ?? 0}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
     );
   }
 }
