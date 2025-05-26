@@ -242,10 +242,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const FeedScreen(),
-    const CreatePostScreen(),
     const DecryptScreen(),
-    const ProfileScreen(),
+    const CreatePostScreen(),
     const SandboxScreen(),
+    const ProfileScreen(),
   ];
 
   @override
