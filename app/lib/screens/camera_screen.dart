@@ -437,6 +437,10 @@ class _CameraScreenState extends State<CameraScreen> {
                             child: Center(
                               child: BrutalistContainer(
                                 backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -462,7 +466,34 @@ class _CameraScreenState extends State<CameraScreen> {
                           ),
                       ],
                     )
-                    : Container(color: Colors.black),
+                    : Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: BrutalistContainer(
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 48,
+                                color: Color(0xFF004AAD),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Initializing camera...',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
                 // Top controls
                 Positioned(
@@ -472,17 +503,25 @@ class _CameraScreenState extends State<CameraScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      BrutalistIconButton(
+                      BrutalistButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icons.arrow_back,
-                        size: 20,
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black,
+                          size: 24,
+                        ),
                       ),
-                      BrutalistIconButton(
+                      BrutalistButton(
                         onPressed: () {
                           // Optional: implement camera switch
                         },
-                        icon: Icons.cameraswitch,
-                        size: 20,
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.cameraswitch,
+                          color: Colors.black,
+                          size: 24,
+                        ),
                       ),
                     ],
                   ),
@@ -493,14 +532,26 @@ class _CameraScreenState extends State<CameraScreen> {
                   bottom: 56,
                   left: 0,
                   right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      Text(
+                        _isRecording
+                            ? 'Tap to stop recording'
+                            : 'Tap to start recording',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       GestureDetector(
                         onTap: _isInitialized ? _onRecordButtonPressed : null,
                         child: BrutalistContainer(
-                          width: 72,
-                          height: 72,
+                          width: 80,
+                          height: 80,
                           padding: const EdgeInsets.all(4),
                           child: Container(
                             decoration: BoxDecoration(
@@ -512,7 +563,7 @@ class _CameraScreenState extends State<CameraScreen> {
                                   ? Icons.stop
                                   : Icons.fiber_manual_record,
                               color: _isRecording ? Colors.white : Colors.red,
-                              size: 32,
+                              size: 40,
                             ),
                           ),
                         ),
@@ -520,14 +571,41 @@ class _CameraScreenState extends State<CameraScreen> {
                     ],
                   ),
                 ),
-
-                // Centered Title
               ],
             ),
           ),
           if (_isUploading)
-            const ThemedLoader(
-              message: 'Encrypting and uploading your video...',
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: BrutalistContainer(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF004AAD),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Processing your video...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
         ],
       ),
